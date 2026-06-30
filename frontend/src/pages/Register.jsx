@@ -41,6 +41,10 @@ export default function Register() {
       setErrors({ ...errors, college_email: ['Only @iitp.ac.in email addresses are allowed.'] })
       return
     }
+    if (!form.personal_email) {
+      setErrors({ ...errors, personal_email: ['Personal email is required.'] })
+      return
+    }
     if (form.password !== form.password_confirmation) {
       setErrors({ ...errors, password_confirmation: ['Passwords do not match.'] })
       return
@@ -150,7 +154,7 @@ export default function Register() {
             <div>
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 pb-2 border-b">Personal Details</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {field('personal_email', 'Personal Email', { type: 'email', optional: true, placeholder: 'yourname@gmail.com' })}
+                {field('personal_email', 'Personal Email', { type: 'email', placeholder: 'yourname@gmail.com' })}
                 {field('mobile', 'Mobile Number', { optional: true, placeholder: '+91 9876543210' })}
               </div>
               <label className="flex items-center gap-2.5 mt-3 cursor-pointer select-none">
