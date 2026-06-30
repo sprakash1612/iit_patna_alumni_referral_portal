@@ -6,15 +6,16 @@ import api from '../api/axios'
 
 const INITIAL = {
   name: '', college_email: '', personal_email: '', mobile: '',
-  current_company: '', previous_company: '', designation: '',
+  current_company: '', designation: '',
   total_experience: '', password: '', password_confirmation: '',
 }
-
 
 export default function Register() {
   const navigate = useNavigate()
   const [form, setForm] = useState(INITIAL)
   const [showMobile, setShowMobile] = useState(true)
+  const [prevCompanies, setPrevCompanies] = useState([])
+  const [prevCompanyInput, setPrevCompanyInput] = useState('')
   const [skills, setSkills] = useState([])
   const [skillInput, setSkillInput] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -25,6 +26,19 @@ export default function Register() {
     setForm({ ...form, [e.target.name]: e.target.value })
     setErrors({ ...errors, [e.target.name]: '' })
   }
+
+  const addPrevCompany = () => {
+    const c = prevCompanyInput.trim()
+    if (!c) return
+    if (prevCompanies.map(x => x.toLowerCase()).includes(c.toLowerCase())) {
+      toast.error('Company already added')
+      return
+    }
+    setPrevCompanies([...prevCompanies, c])
+    setPrevCompanyInput('')
+  }
+
+  const removePrevCompany = (index) => setPrevCompanies(prevCompanies.filter((_, i) => i !== index))
 
   const addSkill = () => {
     const s = skillInput.trim()
@@ -39,10 +53,6 @@ export default function Register() {
 
   const removeSkill = (index) => setSkills(skills.filter((_, i) => i !== index))
 
-  const handleSkillKeyDown = (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); addSkill() }
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.college_email.endsWith('@iitp.ac.in')) {
@@ -51,7 +61,12 @@ export default function Register() {
     }
     setLoading(true)
     try {
-      const { data } = await api.post('/auth/register', { ...form, skills, show_mobile: showMobile })
+      const { data } = await api.post('/auth/register', {
+        ...form,
+        previous_company: prevCompanies,
+        skills,
+        show_mobile: showMobile,
+      })
       toast.success('Registration successful! You can now log in.')
       navigate('/login')
     } catch (err) {
@@ -81,6 +96,21 @@ export default function Register() {
       />
       {errors[name] && <p className="error-text">{errors[name][0]}</p>}
     </div>
+  )
+
+  const tagList = (items, onRemove, colorClass = 'bg-blue-50 text-brand-800 border-blue-100') => (
+    items.length > 0 && (
+      <div className="flex flex-wrap gap-2 mt-3">
+        {items.map((item, i) => (
+          <span key={i} className={`flex items-center gap-1 px-2.5 py-1 text-sm font-medium rounded-full border ${colorClass}`}>
+            {item}
+            <button type="button" onClick={() => onRemove(i)} className="text-brand-600 hover:text-red-500 ml-0.5">
+              <X size={12} />
+            </button>
+          </span>
+        ))}
+      </div>
+    )
   )
 
   return (
@@ -178,9 +208,7 @@ export default function Register() {
                   onChange={e => setShowMobile(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-brand-700 focus:ring-brand-600"
                 />
-                <span className="text-sm text-gray-600">
-                  Show my mobile number to other members
-                </span>
+                <span className="text-sm text-gray-600">Show my mobile number to other members</span>
               </label>
             </div>
 
@@ -189,9 +217,25 @@ export default function Register() {
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 pb-2 border-b">Professional Details</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {field('current_company', 'Current Company', { optional: true, placeholder: 'Google' })}
-                {field('previous_company', 'Previous Company', { optional: true, placeholder: 'Amazon' })}
                 {field('designation', 'Designation', { optional: true, placeholder: 'Software Engineer' })}
                 {field('total_experience', 'Total Experience', { optional: true, placeholder: '2 years' })}
+              </div>
+
+              {/* Previous Companies — multi-input */}
+              <div className="mt-4">
+                <label className="label">Previous Companies <span className="text-gray-400 font-normal">(optional)</span></label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={prevCompanyInput}
+                    onChange={e => setPrevCompanyInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPrevCompany() } }}
+                    placeholder="Type a company and press Enter (e.g. Amazon)"
+                    className="input flex-1"
+                  />
+                  <button type="button" onClick={addPrevCompany} className="btn-secondary whitespace-nowrap">Add</button>
+                </div>
+                {tagList(prevCompanies, removePrevCompany, 'bg-orange-50 text-orange-800 border-orange-100')}
               </div>
             </div>
 
@@ -203,24 +247,13 @@ export default function Register() {
                   type="text"
                   value={skillInput}
                   onChange={e => setSkillInput(e.target.value)}
-                  onKeyDown={handleSkillKeyDown}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSkill() } }}
                   placeholder="Type a skill and press Enter (e.g. React, Python)"
                   className="input flex-1"
                 />
                 <button type="button" onClick={addSkill} className="btn-secondary whitespace-nowrap">Add</button>
               </div>
-              {skills.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {skills.map((s, i) => (
-                    <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-brand-800 text-sm font-medium rounded-full border border-blue-100">
-                      {s}
-                      <button type="button" onClick={() => removeSkill(i)} className="text-brand-600 hover:text-red-500 ml-0.5">
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+              {tagList(skills, removeSkill)}
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full mt-2">

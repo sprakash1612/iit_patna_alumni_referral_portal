@@ -30,9 +30,10 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'is_verified'  => 'boolean',
-        'show_mobile'  => 'boolean',
-        'password'     => 'hashed',
+        'is_verified'      => 'boolean',
+        'show_mobile'      => 'boolean',
+        'previous_company' => 'array',
+        'password'         => 'hashed',
     ];
 
     public function skills()

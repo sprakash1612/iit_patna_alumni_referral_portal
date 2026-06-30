@@ -149,7 +149,12 @@ export default function Dashboard() {
                           <p className="text-gray-400 text-xs">{u.college_email}</p>
                         </td>
                         <td className="px-5 py-4 text-gray-700">{u.designation || '—'}</td>
-                        <td className="px-5 py-4 text-gray-700">{u.current_company || '—'}</td>
+                        <td className="px-5 py-4 text-gray-700">
+                          <p>{u.current_company || '—'}</p>
+                          {u.previous_company?.length > 0 && (
+                            <p className="text-xs text-gray-400 mt-0.5">Prev: {u.previous_company.join(', ')}</p>
+                          )}
+                        </td>
                         <td className="px-5 py-4 text-gray-700">{u.total_experience || '—'}</td>
                         <td className="px-5 py-4 text-gray-700 text-xs">{u.personal_email || '—'}</td>
                         <td className="px-5 py-4 text-gray-700 text-xs">
@@ -202,6 +207,7 @@ export default function Dashboard() {
                       <p className="font-semibold text-gray-900">{u.name}</p>
                       <p className="text-gray-500 text-xs">{u.college_email}</p>
                       {u.designation && <p className="text-gray-600 text-sm mt-1">{u.designation} {u.current_company ? `@ ${u.current_company}` : ''}</p>}
+                      {u.previous_company?.length > 0 && <p className="text-gray-400 text-xs mt-0.5">Prev: {u.previous_company.join(', ')}</p>}
                       {u.total_experience && <p className="text-gray-500 text-xs mt-0.5">Exp: {u.total_experience}</p>}
                       {u.personal_email && <p className="text-gray-500 text-xs mt-0.5">{u.personal_email}</p>}
                       {u.mobile && <p className="text-gray-500 text-xs mt-0.5">📱 {u.mobile}</p>}

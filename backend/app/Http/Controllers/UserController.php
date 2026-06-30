@@ -25,7 +25,7 @@ class UserController extends Controller
                     'mobile'           => $user->show_mobile ? $user->mobile : $this->maskMobile($user->mobile),
                     'show_mobile'      => $user->show_mobile,
                     'current_company'  => $user->current_company,
-                    'previous_company' => $user->previous_company,
+                    'previous_company' => $user->previous_company ?? [],
                     'designation'      => $user->designation,
                     'total_experience' => $user->total_experience,
                     'skills'           => $user->skills->pluck('name'),
