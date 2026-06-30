@@ -64,7 +64,7 @@ export default function Navbar() {
   const unseenCount = notifications.filter(n => !n.is_seen).length
 
   const navLinkClass = ({ isActive }) =>
-    `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+    `inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors leading-none ${
       isActive ? 'bg-white/20 text-white' : 'text-blue-200 hover:text-white hover:bg-white/10'
     }`
 
