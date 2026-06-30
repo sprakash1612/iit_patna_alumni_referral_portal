@@ -2,75 +2,80 @@ import { useEffect, useRef, useState } from 'react'
 import { LogOut, User, Bell, X, Briefcase, Mail, Phone, Home, LayoutDashboard, SendHorizontal } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
-import api from '../api/axios'
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
+  const { user, logout }          = useAuth()
   const [notifications, setNotifications] = useState([])
-  const [open, setOpen] = useState(false)
-  const dropdownRef = useRef(null)
+  const [open, setOpen]           = useState(false)
+  const dropdownRef               = useRef(null)
 
   useEffect(() => {
-    fetchNotifications()
-  }, [])
+    if (!user) return
+    // Initial fetch
+    supabase.from('referral_requests')
+      .select(`id, job_post_id, message, status, is_seen, created_at,
+               requester:profiles!requester_id(id, name, college_email, designation, current_company, mobile, show_mobile)`)
+      .eq('referee_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setNotifications(data || []))
+
+    // Real-time subscription
+    const channel = supabase.channel('referral-notifications')
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'referral_requests',
+        filter: `referee_id=eq.${user.id}`,
+      }, async (payload) => {
+        const { data } = await supabase.from('referral_requests')
+          .select(`id, job_post_id, message, status, is_seen, created_at,
+                   requester:profiles!requester_id(id, name, college_email, designation, current_company, mobile, show_mobile)`)
+          .eq('id', payload.new.id).single()
+        if (data) {
+          setNotifications(prev => [data, ...prev])
+          toast.success(`New referral request from ${data.requester?.name}!`)
+        }
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [user])
 
   useEffect(() => {
     const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpen(false)
-      }
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const fetchNotifications = async () => {
-    try {
-      const { data } = await api.get('/referrals/received')
-      setNotifications(data.requests)
-    } catch {}
-  }
-
   const handleBellClick = async () => {
     setOpen(prev => !prev)
     const unseen = notifications.filter(n => !n.is_seen)
     if (!open && unseen.length > 0) {
-      try {
-        await api.patch('/referrals/mark-seen')
-        setNotifications(prev => prev.map(n => ({ ...n, is_seen: true })))
-      } catch {}
+      await supabase.from('referral_requests')
+        .update({ is_seen: true })
+        .eq('referee_id', user.id)
+        .eq('is_seen', false)
+      setNotifications(prev => prev.map(n => ({ ...n, is_seen: true })))
     }
-  }
-
-  const handleLogout = async () => {
-    await logout()
-    toast.success('Logged out successfully')
   }
 
   const unseenCount = notifications.filter(n => !n.is_seen).length
 
   const navLinkClass = ({ isActive }) =>
     `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-      isActive
-        ? 'bg-white/20 text-white'
-        : 'text-blue-200 hover:text-white hover:bg-white/10'
+      isActive ? 'bg-white/20 text-white' : 'text-blue-200 hover:text-white hover:bg-white/10'
     }`
 
   return (
     <nav className="bg-brand-800 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-
-          {/* Logo + Brand */}
-          <Link to="/dashboard" className="flex items-center gap-2.5 flex-shrink-0">
+          <Link to="/home" className="flex items-center gap-2.5 flex-shrink-0">
             <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center overflow-hidden">
-              <img
-                src="/iitp-logo.png"
-                alt="IIT Patna"
-                className="w-7 h-7 object-contain"
-                onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }}
-              />
+              <img src="/iitp-logo.png" alt="IIT Patna" className="w-7 h-7 object-contain"
+                onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }}/>
               <span className="text-brand-800 font-bold text-sm hidden">II</span>
             </div>
             <div className="hidden sm:block">
@@ -79,55 +84,33 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Nav Tabs */}
           <div className="flex items-center gap-1">
-            <NavLink to="/home" className={navLinkClass}>
-              <Home size={15} />
-              <span className="hidden sm:inline">Home</span>
-            </NavLink>
-            <NavLink to="/dashboard" className={navLinkClass}>
-              <LayoutDashboard size={15} />
-              <span className="hidden sm:inline">Dashboard</span>
-            </NavLink>
-            <NavLink to="/referrals" className={navLinkClass}>
-              <SendHorizontal size={15} />
-              <span className="hidden sm:inline">Referrals</span>
-            </NavLink>
+            <NavLink to="/home" className={navLinkClass}><Home size={15}/><span className="hidden sm:inline">Home</span></NavLink>
+            <NavLink to="/dashboard" className={navLinkClass}><LayoutDashboard size={15}/><span className="hidden sm:inline">Dashboard</span></NavLink>
+            <NavLink to="/referrals" className={navLinkClass}><SendHorizontal size={15}/><span className="hidden sm:inline">Referrals</span></NavLink>
           </div>
 
-          {/* Right side */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Link
-              to="/profile"
-              className="hidden sm:flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors"
-            >
-              <User size={16} />
-              <span className="font-medium">{user?.name}</span>
+            <Link to="/profile" className="hidden sm:flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors">
+              <User size={16}/><span className="font-medium">{user?.name}</span>
             </Link>
 
-            {/* Notification Bell */}
             <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={handleBellClick}
-                className="relative flex items-center justify-center w-9 h-9 rounded-lg text-blue-100 hover:text-white hover:bg-brand-700 transition-colors"
-              >
-                <Bell size={18} />
+              <button onClick={handleBellClick}
+                className="relative flex items-center justify-center w-9 h-9 rounded-lg text-blue-100 hover:text-white hover:bg-brand-700 transition-colors">
+                <Bell size={18}/>
                 {unseenCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center">
                     {unseenCount > 9 ? '9+' : unseenCount}
                   </span>
                 )}
               </button>
-
               {open && (
                 <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                     <h4 className="font-semibold text-gray-800 text-sm">Referral Requests Received</h4>
-                    <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
-                      <X size={16} />
-                    </button>
+                    <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={16}/></button>
                   </div>
-
                   {notifications.length === 0 ? (
                     <div className="px-4 py-8 text-center text-gray-400 text-sm">No referral requests yet</div>
                   ) : (
@@ -135,31 +118,19 @@ export default function Navbar() {
                       {notifications.map(n => (
                         <li key={n.id} className={`px-4 py-3 ${!n.is_seen ? 'bg-blue-50' : ''}`}>
                           <div className="flex items-start gap-2">
-                            {!n.is_seen && <span className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
+                            {!n.is_seen && <span className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"/>}
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 text-sm">{n.requester.name}</p>
-                              {n.requester.designation && (
+                              <p className="font-semibold text-gray-900 text-sm">{n.requester?.name}</p>
+                              {n.requester?.designation && (
                                 <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5">
-                                  <Briefcase size={11} />
-                                  {n.requester.designation}{n.requester.current_company ? ` @ ${n.requester.current_company}` : ''}
+                                  <Briefcase size={11}/>{n.requester.designation}{n.requester.current_company ? ` @ ${n.requester.current_company}` : ''}
                                 </p>
                               )}
-                              {n.requester.college_email && (
-                                <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5">
-                                  <Mail size={11} /> {n.requester.college_email}
-                                </p>
-                              )}
-                              {n.requester.mobile && (
-                                <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5">
-                                  <Phone size={11} /> {n.requester.mobile}
-                                </p>
-                              )}
-                              {n.message && (
-                                <p className="text-gray-600 text-xs mt-1.5 italic border-l-2 border-gray-200 pl-2">"{n.message}"</p>
-                              )}
-                              <p className="text-gray-300 text-[10px] mt-1">
-                                {new Date(n.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                              </p>
+                              {n.requester?.college_email && <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5"><Mail size={11}/>{n.requester.college_email}</p>}
+                              {n.requester?.mobile && n.requester?.show_mobile && <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5"><Phone size={11}/>{n.requester.mobile}</p>}
+                              {n.job_post_id && <p className="text-xs text-purple-500 mt-0.5">Via job post</p>}
+                              {n.message && <p className="text-gray-600 text-xs mt-1.5 italic border-l-2 border-gray-200 pl-2">"{n.message}"</p>}
+                              <p className="text-gray-300 text-[10px] mt-1">{new Date(n.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</p>
                             </div>
                           </div>
                         </li>
@@ -170,12 +141,9 @@ export default function Navbar() {
               )}
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-1.5 text-blue-100 hover:text-white hover:bg-brand-700 rounded-lg transition-colors text-sm"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Logout</span>
+            <button onClick={logout}
+              className="flex items-center gap-2 px-3 py-1.5 text-blue-100 hover:text-white hover:bg-brand-700 rounded-lg transition-colors text-sm">
+              <LogOut size={16}/><span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
