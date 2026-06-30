@@ -4,7 +4,8 @@ import { Eye, EyeOff, KeyRound, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export default function ForgotPassword() {
   const [form, setForm]     = useState({ college_email: '', personal_email: '' })
@@ -26,7 +27,10 @@ export default function ForgotPassword() {
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/send-reset-email`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+        },
         body: JSON.stringify({
           college_email:  form.college_email.toLowerCase().trim(),
           personal_email: form.personal_email.toLowerCase().trim(),
