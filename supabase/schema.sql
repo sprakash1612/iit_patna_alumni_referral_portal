@@ -81,6 +81,50 @@ CREATE TRIGGER referral_requests_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- ============================================================
+-- PASSWORD RESET VIA PERSONAL EMAIL VERIFICATION (no email needed)
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE OR REPLACE FUNCTION public.reset_password_by_personal_email(
+  p_college_email  TEXT,
+  p_personal_email TEXT,
+  p_new_password   TEXT
+) RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  IF length(p_new_password) < 8 THEN
+    RETURN 'error: password must be at least 8 characters';
+  END IF;
+
+  SELECT id INTO v_user_id
+  FROM public.profiles
+  WHERE college_email   = lower(trim(p_college_email))
+    AND personal_email IS NOT NULL
+    AND lower(personal_email) = lower(trim(p_personal_email));
+
+  IF v_user_id IS NULL THEN
+    RETURN 'error: no account found or personal email does not match';
+  END IF;
+
+  UPDATE auth.users
+  SET encrypted_password = crypt(p_new_password, gen_salt('bf')),
+      updated_at         = now()
+  WHERE id = v_user_id;
+
+  RETURN 'success';
+END;
+$$;
+
+-- Allow unauthenticated users to call this function
+GRANT EXECUTE ON FUNCTION public.reset_password_by_personal_email TO anon;
+
+-- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
 
