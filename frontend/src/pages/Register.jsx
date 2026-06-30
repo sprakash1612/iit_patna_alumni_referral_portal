@@ -111,7 +111,18 @@ export default function Register() {
                     className="input"
                     required
                   />
-                  {errors.college_email && <p className="error-text">{errors.college_email[0]}</p>}
+                  {errors.college_email && (
+                    errors.college_email[0].includes('already been taken') ? (
+                      <p className="error-text">
+                        This email is already registered.{' '}
+                        <Link to="/login" className="text-brand-700 font-semibold underline">Sign in</Link>
+                        {' '}or{' '}
+                        <Link to="/login" className="text-brand-700 font-semibold underline">reset your password</Link>.
+                      </p>
+                    ) : (
+                      <p className="error-text">{errors.college_email[0]}</p>
+                    )
+                  )}
                 </div>
               </div>
             </div>
