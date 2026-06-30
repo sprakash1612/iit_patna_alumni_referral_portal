@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, X, Save, ArrowLeft, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 
@@ -120,7 +121,7 @@ export default function Profile() {
     )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 py-8">
 
@@ -292,6 +293,7 @@ export default function Profile() {
           </form>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

@@ -13,12 +13,14 @@ class ReferralController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'referee_id' => 'required|integer|exists:users,id',
-            'message'    => 'nullable|string|max:1000',
+            'referee_id'  => 'required|integer|exists:users,id',
+            'job_post_id' => 'nullable|integer|exists:job_posts,id',
+            'message'     => 'nullable|string|max:1000',
         ]);
 
-        $requester = $request->user();
-        $refereeId = $request->referee_id;
+        $requester  = $request->user();
+        $refereeId  = $request->referee_id;
+        $jobPostId  = $request->job_post_id ?? null;
 
         if ($requester->id === $refereeId) {
             return response()->json(['message' => 'You cannot request a referral from yourself.'], 422);
@@ -29,17 +31,21 @@ class ReferralController extends Controller
             return response()->json(['message' => 'Referee not found.'], 404);
         }
 
+        // Duplicate check scoped to the same job_post_id (null = dashboard referral)
         $existing = ReferralRequest::where('requester_id', $requester->id)
             ->where('referee_id', $refereeId)
+            ->where('job_post_id', $jobPostId)
             ->first();
 
         if ($existing) {
-            return response()->json(['message' => 'You have already sent a referral request to this person.'], 422);
+            $context = $jobPostId ? 'this job post' : 'this person';
+            return response()->json(['message' => "You have already sent a referral request for {$context}."], 422);
         }
 
-        $referralRequest = ReferralRequest::create([
+        ReferralRequest::create([
             'requester_id' => $requester->id,
             'referee_id'   => $refereeId,
+            'job_post_id'  => $jobPostId,
             'message'      => $request->message,
             'status'       => 'sent',
             'is_seen'      => false,
@@ -76,20 +82,21 @@ class ReferralController extends Controller
             ->map(function ($r) {
                 $req = $r->requester;
                 return [
-                    'id'         => $r->id,
-                    'message'    => $r->message,
-                    'status'     => $r->status,
-                    'is_seen'    => $r->is_seen,
-                    'created_at' => $r->created_at,
-                    'requester'  => [
-                        'id'              => $req->id,
-                        'name'            => $req->name,
-                        'college_email'   => $req->college_email,
-                        'personal_email'  => $req->personal_email,
-                        'mobile'          => $req->show_mobile ? $req->mobile : null,
-                        'current_company' => $req->current_company,
-                        'designation'     => $req->designation,
-                        'total_experience'=> $req->total_experience,
+                    'id'          => $r->id,
+                    'job_post_id' => $r->job_post_id,
+                    'message'     => $r->message,
+                    'status'      => $r->status,
+                    'is_seen'     => $r->is_seen,
+                    'created_at'  => $r->created_at,
+                    'requester'   => [
+                        'id'               => $req->id,
+                        'name'             => $req->name,
+                        'college_email'    => $req->college_email,
+                        'personal_email'   => $req->personal_email,
+                        'mobile'           => $req->show_mobile ? $req->mobile : null,
+                        'current_company'  => $req->current_company,
+                        'designation'      => $req->designation,
+                        'total_experience' => $req->total_experience,
                     ],
                 ];
             });

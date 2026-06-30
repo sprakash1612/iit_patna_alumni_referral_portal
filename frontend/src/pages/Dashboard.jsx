@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, SendHorizontal, X, Loader2, Users, Mail, Phone, Briefcase, Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import SkillBadge from '../components/SkillBadge'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
@@ -25,7 +26,12 @@ export default function Dashboard() {
     ]).then(([usersRes, sentRes]) => {
       setUsers(usersRes.data.users)
       setFiltered(usersRes.data.users)
-      setSentIds(new Set(sentRes.data.requests.map(r => Number(r.referee_id))))
+      // Only track dashboard referrals (job_post_id === null)
+      setSentIds(new Set(
+        sentRes.data.requests
+          .filter(r => r.job_post_id === null || r.job_post_id === undefined)
+          .map(r => Number(r.referee_id))
+      ))
     }).catch(() => {
       toast.error('Failed to load members.')
     }).finally(() => setLoading(false))
@@ -50,8 +56,9 @@ export default function Dashboard() {
     setSending(true)
     try {
       const { data } = await api.post('/referrals', {
-        referee_id: modal.id,
-        message: message.trim() || null,
+        referee_id:  modal.id,
+        job_post_id: null,
+        message:     message.trim() || null,
       })
       toast.success(data.message)
       setSentIds(prev => new Set([...prev, modal.id]))
@@ -79,7 +86,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -306,6 +313,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   )
 }

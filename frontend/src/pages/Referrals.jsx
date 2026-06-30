@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Loader2, SendHorizontal, Inbox, Briefcase, Mail, Phone, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import SkillBadge from '../components/SkillBadge'
 import api from '../api/axios'
 
@@ -98,7 +99,7 @@ export default function Referrals() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-xl font-bold text-gray-900 mb-6">Referral Requests</h1>
@@ -152,6 +153,7 @@ export default function Referrals() {
           )
         )}
       </div>
+      <Footer />
     </div>
   )
 }

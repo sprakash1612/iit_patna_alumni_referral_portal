@@ -9,6 +9,7 @@ class ReferralRequest extends Model
     protected $fillable = [
         'requester_id',
         'referee_id',
+        'job_post_id',
         'message',
         'status',
         'is_seen',

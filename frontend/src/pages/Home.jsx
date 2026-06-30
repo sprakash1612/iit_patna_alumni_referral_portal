@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Plus, X, Loader2, Briefcase, MapPin, Clock, Trash2, ChevronDown, ChevronUp, SendHorizontal } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 
@@ -36,11 +37,11 @@ export default function Home() {
   const [errors, setErrors]         = useState({})
   const [expanded, setExpanded]     = useState({})
 
-  // Referral modal state
-  const [sentIds, setSentIds]   = useState(new Set())
-  const [modal, setModal]       = useState(null) // { id, name, college_email, current_company, designation }
-  const [message, setMessage]   = useState('')
-  const [sending, setSending]   = useState(false)
+  // Referral modal state — keyed by job_post_id
+  const [sentPostIds, setSentPostIds] = useState(new Set())
+  const [modal, setModal]             = useState(null)
+  const [message, setMessage]         = useState('')
+  const [sending, setSending]         = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -48,7 +49,12 @@ export default function Home() {
       api.get('/referrals/sent'),
     ]).then(([postsRes, sentRes]) => {
       setPosts(postsRes.data.posts)
-      setSentIds(new Set(sentRes.data.requests.map(r => Number(r.referee_id))))
+      // Track per-job-post referrals only
+      setSentPostIds(new Set(
+        sentRes.data.requests
+          .filter(r => r.job_post_id !== null && r.job_post_id !== undefined)
+          .map(r => Number(r.job_post_id))
+      ))
     }).catch(() => toast.error('Failed to load posts.'))
       .finally(() => setLoading(false))
   }, [])
@@ -97,11 +103,12 @@ export default function Home() {
     setSending(true)
     try {
       const { data } = await api.post('/referrals', {
-        referee_id: modal.id,
-        message: message.trim() || null,
+        referee_id:  modal.id,
+        job_post_id: modal.post_id,   // tracks which specific post this is for
+        message:     message.trim() || null,
       })
       toast.success(data.message)
-      setSentIds(prev => new Set([...prev, modal.id]))
+      setSentPostIds(prev => new Set([...prev, modal.post_id]))
 
       const subject = encodeURIComponent('Referral Request — IITP Alumni Network')
       const body = encodeURIComponent(
@@ -127,7 +134,7 @@ export default function Home() {
   const toggleExpand = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }))
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -194,8 +201,8 @@ export default function Home() {
         ) : (
           <div className="space-y-4">
             {posts.map(post => {
-              const isOwnPost  = post.posted_by.id === user?.id
-              const alreadySent = sentIds.has(Number(post.posted_by.id))
+              const isOwnPost   = post.posted_by.id === user?.id
+              const alreadySent = sentPostIds.has(Number(post.id))
 
               return (
                 <div key={post.id} className="card">
@@ -245,7 +252,7 @@ export default function Home() {
                         </span>
                       ) : (
                         <button
-                          onClick={() => openModal({ ...post.posted_by, job_title: post.job_title, company: post.company })}
+                          onClick={() => openModal({ ...post.posted_by, post_id: post.id, job_title: post.job_title, company: post.company })}
                           className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-800 hover:bg-brand-700 rounded-lg transition-colors"
                         >
                           <SendHorizontal size={13} />
@@ -335,6 +342,7 @@ export default function Home() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   )
 }
