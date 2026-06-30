@@ -252,7 +252,7 @@ export default function Admin() {
             </div>
 
           /* ── REFERRALS ── */
-          ) : (
+          ) : tab === 'referrals' ? (
             <div className="card overflow-hidden p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
