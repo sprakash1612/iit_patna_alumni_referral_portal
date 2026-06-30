@@ -1,0 +1,6 @@
+# Preview (standalone HTML, no need in repo)
+preview/
+
+# OS
+.DS_Store
+Thumbs.db

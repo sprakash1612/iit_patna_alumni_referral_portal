@@ -1,0 +1,20 @@
+# Environment — NEVER commit real credentials
+.env
+.env.backup
+.env.production
+
+# Laravel generated / cache
+vendor/
+bootstrap/cache/*.php
+storage/*.key
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+
+# Composer
+composer.phar
+
+# PHPUnit
+.phpunit.result.cache
+coverage/

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer --version)",
+      "Bash(npm --version)",
+      "Bash(where composer *)",
+      "Bash(where php *)",
+      "Bash(where node *)",
+      "Bash(where npm *)",
+      "Bash(php --version)",
+      "Bash(winget --version)",
+      "Bash(choco --version)",
+      "Bash(scoop --version)"
+    ]
+  }
+}

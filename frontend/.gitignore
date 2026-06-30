@@ -1,0 +1,14 @@
+# Environment — NEVER commit real credentials
+.env
+.env.local
+.env.production
+
+# Build output
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Misc
+.DS_Store
