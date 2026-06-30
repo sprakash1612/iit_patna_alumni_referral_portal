@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import Referrals from './pages/Referrals'
 import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Home from './pages/Home'
 
 function ProtectedRoute({ children }) {
@@ -33,6 +34,7 @@ export default function App() {
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
       <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+      <Route path="/reset-password" element={<ResetPassword />} />
     </Routes>
   )
 }
