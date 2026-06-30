@@ -85,9 +85,9 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-1">
-            <NavLink to="/home" className={navLinkClass}><Home size={15}/><span className="hidden sm:inline">Home</span></NavLink>
-            <NavLink to="/dashboard" className={navLinkClass}><LayoutDashboard size={15}/><span className="hidden sm:inline">Dashboard</span></NavLink>
-            <NavLink to="/referrals" className={navLinkClass}><SendHorizontal size={15}/><span className="hidden sm:inline">Referrals</span></NavLink>
+            <NavLink to="/home" className={navLinkClass}><Home size={15}/><span className="hidden sm:inline">Jobs</span></NavLink>
+            <NavLink to="/dashboard" className={navLinkClass}><LayoutDashboard size={15}/><span className="hidden sm:inline">Network</span></NavLink>
+            <NavLink to="/referrals" className={navLinkClass}><SendHorizontal size={15}/><span className="hidden sm:inline">Requests</span></NavLink>
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
