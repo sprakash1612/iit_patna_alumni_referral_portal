@@ -15,7 +15,7 @@ COPY composer.json ./
 RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
 
 COPY . .
-RUN composer dump-autoload --optimize --no-interaction
+RUN composer dump-autoload --optimize --no-scripts --no-interaction
 
 RUN mkdir -p bootstrap/cache \
     storage/framework/cache/data \
