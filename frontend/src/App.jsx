@@ -9,10 +9,17 @@ import Referrals from './pages/Referrals'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Home from './pages/Home'
+import Admin from './pages/Admin'
+
+const Spinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-800" />
+  </div>
+)
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-800" /></div>
+  if (loading) return <Spinner />
   return user ? children : <Navigate to="/login" replace />
 }
 
@@ -20,6 +27,14 @@ function GuestRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return null
   return user ? <Navigate to="/home" replace /> : children
+}
+
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <Spinner />
+  if (!user) return <Navigate to="/login" replace />
+  if (!user.is_admin) return <Navigate to="/home" replace />
+  return children
 }
 
 export default function App() {
@@ -35,6 +50,7 @@ export default function App() {
       <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
       <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
     </Routes>
   )
 }

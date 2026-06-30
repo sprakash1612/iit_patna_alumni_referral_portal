@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { LogOut, User, Bell, X, Briefcase, Mail, Phone, Home, LayoutDashboard, SendHorizontal } from 'lucide-react'
+import { LogOut, User, Bell, X, Briefcase, Mail, Phone, Home, LayoutDashboard, SendHorizontal, ShieldCheck } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -88,6 +88,9 @@ export default function Navbar() {
             <NavLink to="/home" className={navLinkClass}><Home size={15}/><span className="hidden sm:inline">Jobs</span></NavLink>
             <NavLink to="/dashboard" className={navLinkClass}><LayoutDashboard size={15}/><span className="hidden sm:inline">Network</span></NavLink>
             <NavLink to="/referrals" className={navLinkClass}><SendHorizontal size={15}/><span className="hidden sm:inline">Requests</span></NavLink>
+            {user?.is_admin && (
+              <NavLink to="/admin" className={navLinkClass}><ShieldCheck size={15}/><span className="hidden sm:inline">Admin</span></NavLink>
+            )}
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">

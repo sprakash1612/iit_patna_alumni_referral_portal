@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   designation      TEXT,
   total_experience TEXT,
   is_verified      BOOLEAN     NOT NULL DEFAULT TRUE,
+  is_admin         BOOLEAN     NOT NULL DEFAULT FALSE,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -143,6 +144,12 @@ CREATE POLICY "profiles: users insert own"
 CREATE POLICY "profiles: users update own"
   ON public.profiles FOR UPDATE TO authenticated
   USING (id = auth.uid());
+CREATE POLICY "profiles: admin can update any"
+  ON public.profiles FOR UPDATE TO authenticated
+  USING ((SELECT is_admin FROM public.profiles WHERE id = auth.uid()));
+CREATE POLICY "profiles: admin can delete any"
+  ON public.profiles FOR DELETE TO authenticated
+  USING ((SELECT is_admin FROM public.profiles WHERE id = auth.uid()));
 
 -- skills
 CREATE POLICY "skills: auth users read all"
@@ -170,7 +177,11 @@ CREATE POLICY "job_posts: users delete own"
 -- referral_requests
 CREATE POLICY "referral_requests: users see own sent or received"
   ON public.referral_requests FOR SELECT TO authenticated
-  USING (requester_id = auth.uid() OR referee_id = auth.uid());
+  USING (
+    requester_id = auth.uid() OR
+    referee_id   = auth.uid() OR
+    (SELECT is_admin FROM public.profiles WHERE id = auth.uid())
+  );
 CREATE POLICY "referral_requests: users insert as requester"
   ON public.referral_requests FOR INSERT TO authenticated
   WITH CHECK (requester_id = auth.uid());
