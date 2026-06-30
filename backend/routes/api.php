@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\JobPostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\UserController;
@@ -22,6 +23,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update']);
 
     Route::get('/users', [UserController::class, 'index']);
+
+    Route::get('/posts', [JobPostController::class, 'index']);
+    Route::post('/posts', [JobPostController::class, 'store']);
+    Route::delete('/posts/{id}', [JobPostController::class, 'destroy']);
 
     Route::post('/referrals', [ReferralController::class, 'store']);
     Route::get('/referrals/sent', [ReferralController::class, 'sent']);

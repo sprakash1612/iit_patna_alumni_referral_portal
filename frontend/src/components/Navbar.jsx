@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { LogOut, User, Bell, X, Briefcase, Mail, Phone, Home, SendHorizontal } from 'lucide-react'
+import { LogOut, User, Bell, X, Briefcase, Mail, Phone, Home, LayoutDashboard, SendHorizontal } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -81,13 +81,17 @@ export default function Navbar() {
 
           {/* Nav Tabs */}
           <div className="flex items-center gap-1">
-            <NavLink to="/dashboard" className={navLinkClass}>
+            <NavLink to="/home" className={navLinkClass}>
               <Home size={15} />
               <span className="hidden sm:inline">Home</span>
             </NavLink>
+            <NavLink to="/dashboard" className={navLinkClass}>
+              <LayoutDashboard size={15} />
+              <span className="hidden sm:inline">Dashboard</span>
+            </NavLink>
             <NavLink to="/referrals" className={navLinkClass}>
               <SendHorizontal size={15} />
-              <span className="hidden sm:inline">Referral Requests</span>
+              <span className="hidden sm:inline">Referrals</span>
             </NavLink>
           </div>
 

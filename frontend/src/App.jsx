@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import Referrals from './pages/Referrals'
 import ForgotPassword from './pages/ForgotPassword'
+import Home from './pages/Home'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -17,16 +18,17 @@ function ProtectedRoute({ children }) {
 function GuestRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return null
-  return user ? <Navigate to="/dashboard" replace /> : children
+  return user ? <Navigate to="/home" replace /> : children
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
       <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
       <Route path="/verify-otp" element={<GuestRoute><VerifyOtp /></GuestRoute>} />
+      <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
