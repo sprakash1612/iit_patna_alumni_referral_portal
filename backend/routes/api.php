@@ -23,4 +23,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/referrals', [ReferralController::class, 'store']);
     Route::get('/referrals/sent', [ReferralController::class, 'sent']);
     Route::get('/referrals/received', [ReferralController::class, 'received']);
+    Route::patch('/referrals/mark-seen', [ReferralController::class, 'markSeen']);
 });

@@ -73,6 +73,24 @@ export default function Dashboard() {
       })
       toast.success(data.message)
       setSentIds(prev => new Set([...prev, modal.id]))
+
+      // Open mailto so the user can also send a personal email directly
+      const subject = encodeURIComponent('Referral Request — IITP Alumni Network')
+      const body = encodeURIComponent(
+        `Hi ${modal.name},\n\n` +
+        `I am ${user?.name}, an IIT Patna alumnus. I came across your profile on the IITP Referral Portal ` +
+        `and would like to request a referral${modal.current_company ? ` at ${modal.current_company}` : ''}.\n\n` +
+        (message.trim() ? `${message.trim()}\n\n` : '') +
+        `My profile:\n` +
+        `• College Email: ${user?.college_email}\n` +
+        (user?.designation ? `• Designation: ${user.designation}\n` : '') +
+        (user?.current_company ? `• Current Company: ${user.current_company}\n` : '') +
+        (user?.total_experience ? `• Experience: ${user.total_experience}\n` : '') +
+        `\nLooking forward to hearing from you.\n\nBest regards,\n${user?.name}`
+      )
+      const to = modal.college_email
+      window.open(`mailto:${to}?subject=${subject}&body=${body}`)
+
       closeModal()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to send request.')

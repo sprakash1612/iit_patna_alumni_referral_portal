@@ -42,6 +42,7 @@ class ReferralController extends Controller
             'referee_id'   => $refereeId,
             'message'      => $request->message,
             'status'       => 'sent',
+            'is_seen'      => false,
         ]);
 
         // Email notification disabled temporarily — uncomment when domain is verified on Resend
@@ -69,10 +70,40 @@ class ReferralController extends Controller
     {
         $requests = $request->user()
             ->referralRequestsReceived()
-            ->with(['requester:id,name,college_email,current_company,designation'])
+            ->with(['requester:id,name,college_email,personal_email,mobile,show_mobile,current_company,designation,total_experience'])
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($r) {
+                $req = $r->requester;
+                return [
+                    'id'         => $r->id,
+                    'message'    => $r->message,
+                    'status'     => $r->status,
+                    'is_seen'    => $r->is_seen,
+                    'created_at' => $r->created_at,
+                    'requester'  => [
+                        'id'              => $req->id,
+                        'name'            => $req->name,
+                        'college_email'   => $req->college_email,
+                        'personal_email'  => $req->personal_email,
+                        'mobile'          => $req->show_mobile ? $req->mobile : null,
+                        'current_company' => $req->current_company,
+                        'designation'     => $req->designation,
+                        'total_experience'=> $req->total_experience,
+                    ],
+                ];
+            });
 
         return response()->json(['requests' => $requests]);
+    }
+
+    public function markSeen(Request $request)
+    {
+        $request->user()
+            ->referralRequestsReceived()
+            ->where('is_seen', false)
+            ->update(['is_seen' => true]);
+
+        return response()->json(['message' => 'Notifications marked as seen.']);
     }
 }

@@ -11,6 +11,11 @@ class ReferralRequest extends Model
         'referee_id',
         'message',
         'status',
+        'is_seen',
+    ];
+
+    protected $casts = [
+        'is_seen' => 'boolean',
     ];
 
     public function requester()
