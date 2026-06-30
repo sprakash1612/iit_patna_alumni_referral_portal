@@ -47,7 +47,13 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-            <span className="text-brand-800 font-black text-2xl">II</span>
+            <img
+              src="/iitp-logo.png"
+              alt="IIT Patna"
+              className="w-10 h-10 object-contain"
+              onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }}
+            />
+            <span className="text-brand-800 font-black text-2xl hidden">II</span>
           </div>
           <h1 className="text-2xl font-bold text-white">IITP Referral Portal</h1>
           <p className="text-blue-200 text-sm mt-1">Sign in to your account</p>
@@ -98,7 +104,13 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-600 mt-6">
+          <div className="mt-4 text-center">
+            <Link to="/forgot-password" className="text-sm text-brand-700 hover:underline font-medium">
+              Forgot password?
+            </Link>
+          </div>
+
+          <p className="text-center text-sm text-gray-600 mt-3">
             Don't have an account?{' '}
             <Link to="/register" className="text-brand-700 font-semibold hover:underline">
               Register

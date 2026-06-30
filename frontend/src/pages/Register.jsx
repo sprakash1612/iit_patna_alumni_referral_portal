@@ -118,7 +118,13 @@ export default function Register() {
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-            <span className="text-brand-800 font-black text-2xl">II</span>
+            <img
+              src="/iitp-logo.png"
+              alt="IIT Patna"
+              className="w-10 h-10 object-contain"
+              onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }}
+            />
+            <span className="text-brand-800 font-black text-2xl hidden">II</span>
           </div>
           <h1 className="text-2xl font-bold text-white">Create Your Account</h1>
           <p className="text-blue-200 text-sm mt-1">Join the IITP Referral Network</p>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { LogOut, User, Bell, X, Briefcase, Mail, Phone } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { LogOut, User, Bell, X, Briefcase, Mail, Phone, Home, SendHorizontal } from 'lucide-react'
+import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import api from '../api/axios'
@@ -50,26 +50,52 @@ export default function Navbar() {
 
   const unseenCount = notifications.filter(n => !n.is_seen).length
 
+  const navLinkClass = ({ isActive }) =>
+    `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+      isActive
+        ? 'bg-white/20 text-white'
+        : 'text-blue-200 hover:text-white hover:bg-white/10'
+    }`
+
   return (
     <nav className="bg-brand-800 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-              <span className="text-brand-800 font-bold text-sm">II</span>
+        <div className="flex items-center justify-between h-16 gap-4">
+
+          {/* Logo + Brand */}
+          <Link to="/dashboard" className="flex items-center gap-2.5 flex-shrink-0">
+            <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center overflow-hidden">
+              <img
+                src="/iitp-logo.png"
+                alt="IIT Patna"
+                className="w-7 h-7 object-contain"
+                onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block' }}
+              />
+              <span className="text-brand-800 font-bold text-sm hidden">II</span>
             </div>
-            <div>
+            <div className="hidden sm:block">
               <p className="text-white font-bold text-sm leading-tight">IITP Referral Portal</p>
-              <p className="text-blue-200 text-xs leading-tight">IIT Patna Alumni Network</p>
+              <p className="text-blue-300 text-xs leading-tight">IIT Patna Alumni Network</p>
             </div>
+          </Link>
+
+          {/* Nav Tabs */}
+          <div className="flex items-center gap-1">
+            <NavLink to="/dashboard" className={navLinkClass}>
+              <Home size={15} />
+              <span className="hidden sm:inline">Home</span>
+            </NavLink>
+            <NavLink to="/referrals" className={navLinkClass}>
+              <SendHorizontal size={15} />
+              <span className="hidden sm:inline">Referral Requests</span>
+            </NavLink>
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Link
               to="/profile"
-              className="hidden sm:flex items-center gap-2 text-blue-100 hover:text-white text-sm mr-1 transition-colors"
+              className="hidden sm:flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors"
             >
               <User size={16} />
               <span className="font-medium">{user?.name}</span>
@@ -89,7 +115,6 @@ export default function Navbar() {
                 )}
               </button>
 
-              {/* Dropdown */}
               {open && (
                 <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -100,17 +125,13 @@ export default function Navbar() {
                   </div>
 
                   {notifications.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-gray-400 text-sm">
-                      No referral requests yet
-                    </div>
+                    <div className="px-4 py-8 text-center text-gray-400 text-sm">No referral requests yet</div>
                   ) : (
                     <ul className="max-h-96 overflow-y-auto divide-y divide-gray-50">
                       {notifications.map(n => (
                         <li key={n.id} className={`px-4 py-3 ${!n.is_seen ? 'bg-blue-50' : ''}`}>
                           <div className="flex items-start gap-2">
-                            {!n.is_seen && (
-                              <span className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                            )}
+                            {!n.is_seen && <span className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-gray-900 text-sm">{n.requester.name}</p>
                               {n.requester.designation && (
@@ -121,20 +142,16 @@ export default function Navbar() {
                               )}
                               {n.requester.college_email && (
                                 <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5">
-                                  <Mail size={11} />
-                                  {n.requester.college_email}
+                                  <Mail size={11} /> {n.requester.college_email}
                                 </p>
                               )}
                               {n.requester.mobile && (
                                 <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5">
-                                  <Phone size={11} />
-                                  {n.requester.mobile}
+                                  <Phone size={11} /> {n.requester.mobile}
                                 </p>
                               )}
                               {n.message && (
-                                <p className="text-gray-600 text-xs mt-1.5 italic border-l-2 border-gray-200 pl-2">
-                                  "{n.message}"
-                                </p>
+                                <p className="text-gray-600 text-xs mt-1.5 italic border-l-2 border-gray-200 pl-2">"{n.message}"</p>
                               )}
                               <p className="text-gray-300 text-[10px] mt-1">
                                 {new Date(n.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}

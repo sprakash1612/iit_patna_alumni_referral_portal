@@ -258,12 +258,13 @@ export default function Dashboard() {
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 z-10">
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Ask for Referral</h3>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  Send a referral request to <span className="font-semibold text-gray-700">{modal.name}</span>
+                  Requesting from <span className="font-semibold text-gray-700">{modal.name}</span>
+                  {modal.current_company ? ` @ ${modal.current_company}` : ''}
                 </p>
               </div>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
@@ -271,9 +272,28 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
-              <p><span className="text-gray-500">Company:</span> <span className="font-medium">{modal.current_company || '—'}</span></p>
-              <p className="mt-1"><span className="text-gray-500">Role:</span> <span className="font-medium">{modal.designation || '—'}</span></p>
+            {/* Your profile — shared with referee */}
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+              <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">Your Profile (shared with referee)</p>
+              <p className="font-semibold text-gray-900">{user?.name}</p>
+              <p className="text-gray-500 text-sm">{user?.college_email}</p>
+              {user?.personal_email && <p className="text-gray-500 text-sm">{user.personal_email}</p>}
+              {user?.designation && (
+                <p className="text-gray-600 text-sm mt-1">
+                  {user.designation}{user.current_company ? ` @ ${user.current_company}` : ''}
+                </p>
+              )}
+              {user?.total_experience && <p className="text-gray-400 text-xs mt-0.5">Experience: {user.total_experience}</p>}
+              {user?.skills?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {user.skills.slice(0, 5).map(s => (
+                    <span key={s.name ?? s} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                      {s.name ?? s}
+                    </span>
+                  ))}
+                  {user.skills.length > 5 && <span className="text-xs text-blue-400">+{user.skills.length - 5} more</span>}
+                </div>
+              )}
             </div>
 
             <div className="mb-5">
@@ -293,7 +313,7 @@ export default function Dashboard() {
               <button onClick={closeModal} className="btn-secondary flex-1">Cancel</button>
               <button onClick={sendReferral} disabled={sending} className="btn-primary flex-1">
                 <SendHorizontal size={16} />
-                {sending ? 'Sending...' : 'Send Request'}
+                {sending ? 'Sending...' : 'Send Request & Open Mail'}
               </button>
             </div>
           </div>

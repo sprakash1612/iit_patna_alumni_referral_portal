@@ -105,6 +105,35 @@ class AuthController extends Controller
         ]);
     }
 
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'college_email'         => 'required|email',
+            'personal_email'        => 'required|email',
+            'password'              => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::where('college_email', strtolower($request->college_email))->first();
+
+        if (!$user || !$user->personal_email) {
+            return response()->json([
+                'message' => 'No account found or no personal email on record. Please contact the admin.',
+            ], 404);
+        }
+
+        if (strtolower($user->personal_email) !== strtolower($request->personal_email)) {
+            return response()->json([
+                'message' => 'Personal email does not match our records.',
+                'errors'  => ['personal_email' => ['Personal email does not match our records.']],
+            ], 422);
+        }
+
+        $user->update(['password' => $request->password]);
+        $user->tokens()->delete();
+
+        return response()->json(['message' => 'Password reset successfully. You can now log in.']);
+    }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

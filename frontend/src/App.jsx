@@ -5,6 +5,8 @@ import Login from './pages/Login'
 import VerifyOtp from './pages/VerifyOtp'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
+import Referrals from './pages/Referrals'
+import ForgotPassword from './pages/ForgotPassword'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -27,6 +29,8 @@ export default function App() {
       <Route path="/verify-otp" element={<GuestRoute><VerifyOtp /></GuestRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
+      <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
     </Routes>
   )
 }
