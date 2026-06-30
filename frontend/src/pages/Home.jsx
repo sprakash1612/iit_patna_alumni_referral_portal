@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, X, Loader2, Briefcase, MapPin, Clock, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, X, Loader2, Briefcase, MapPin, Clock, Trash2, ChevronDown, ChevronUp, SendHorizontal } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
@@ -28,26 +28,30 @@ const EMPTY_FORM = { job_title: '', company: '', location: '', job_type: 'full-t
 
 export default function Home() {
   const { user } = useAuth()
-  const [posts, setPosts]         = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [showForm, setShowForm]   = useState(false)
-  const [form, setForm]           = useState(EMPTY_FORM)
+  const [posts, setPosts]           = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [showForm, setShowForm]     = useState(false)
+  const [form, setForm]             = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
-  const [errors, setErrors]       = useState({})
-  const [expanded, setExpanded]   = useState({})
+  const [errors, setErrors]         = useState({})
+  const [expanded, setExpanded]     = useState({})
 
-  useEffect(() => { fetchPosts() }, [])
+  // Referral modal state
+  const [sentIds, setSentIds]   = useState(new Set())
+  const [modal, setModal]       = useState(null) // { id, name, college_email, current_company, designation }
+  const [message, setMessage]   = useState('')
+  const [sending, setSending]   = useState(false)
 
-  const fetchPosts = async () => {
-    try {
-      const { data } = await api.get('/posts')
-      setPosts(data.posts)
-    } catch {
-      toast.error('Failed to load posts.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    Promise.all([
+      api.get('/posts'),
+      api.get('/referrals/sent'),
+    ]).then(([postsRes, sentRes]) => {
+      setPosts(postsRes.data.posts)
+      setSentIds(new Set(sentRes.data.requests.map(r => Number(r.referee_id))))
+    }).catch(() => toast.error('Failed to load posts.'))
+      .finally(() => setLoading(false))
+  }, [])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -86,6 +90,40 @@ export default function Home() {
     }
   }
 
+  const openModal = (poster) => { setModal(poster); setMessage('') }
+  const closeModal = () => { setModal(null); setMessage('') }
+
+  const sendReferral = async () => {
+    setSending(true)
+    try {
+      const { data } = await api.post('/referrals', {
+        referee_id: modal.id,
+        message: message.trim() || null,
+      })
+      toast.success(data.message)
+      setSentIds(prev => new Set([...prev, modal.id]))
+
+      const subject = encodeURIComponent('Referral Request — IITP Alumni Network')
+      const body = encodeURIComponent(
+        `Hi ${modal.name},\n\n` +
+        `I am ${user?.name}, an IIT Patna alumnus. I saw your job post for "${modal.job_title || 'the position'}" at ${modal.current_company || modal.company} on the IITP Referral Portal and would like to request a referral.\n\n` +
+        (message.trim() ? `${message.trim()}\n\n` : '') +
+        `My profile:\n` +
+        `• College Email: ${user?.college_email}\n` +
+        (user?.designation ? `• Designation: ${user.designation}\n` : '') +
+        (user?.current_company ? `• Current Company: ${user.current_company}\n` : '') +
+        (user?.total_experience ? `• Experience: ${user.total_experience}\n` : '') +
+        `\nLooking forward to hearing from you.\n\nBest regards,\n${user?.name}`
+      )
+      window.open(`mailto:${modal.college_email}?subject=${subject}&body=${body}`)
+      closeModal()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send request.')
+    } finally {
+      setSending(false)
+    }
+  }
+
   const toggleExpand = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }))
 
   return (
@@ -94,11 +132,11 @@ export default function Home() {
 
       <div className="max-w-2xl mx-auto px-4 py-8">
 
-        {/* Create Post Button / Form */}
+        {/* Create Post */}
         {!showForm ? (
           <button
             onClick={() => setShowForm(true)}
-            className="w-full flex items-center gap-3 card p-4 text-left hover:border-brand-300 border-2 border-dashed border-gray-200 transition-colors mb-6 rounded-xl"
+            className="w-full flex items-center gap-3 p-4 text-left hover:border-brand-300 border-2 border-dashed border-gray-200 bg-white rounded-xl transition-colors mb-6"
           >
             <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
               <Plus size={18} className="text-brand-700" />
@@ -116,51 +154,21 @@ export default function Home() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <input
-                    name="job_title"
-                    value={form.job_title}
-                    onChange={handleChange}
-                    placeholder="Job Title *"
-                    className="input"
-                    required
-                  />
+                  <input name="job_title" value={form.job_title} onChange={handleChange} placeholder="Job Title *" className="input" required />
                   {errors.job_title && <p className="error-text">{errors.job_title[0]}</p>}
                 </div>
                 <div>
-                  <input
-                    name="company"
-                    value={form.company}
-                    onChange={handleChange}
-                    placeholder="Company *"
-                    className="input"
-                    required
-                  />
+                  <input name="company" value={form.company} onChange={handleChange} placeholder="Company *" className="input" required />
                   {errors.company && <p className="error-text">{errors.company[0]}</p>}
                 </div>
-                <input
-                  name="location"
-                  value={form.location}
-                  onChange={handleChange}
-                  placeholder="Location (e.g. Bangalore / Remote)"
-                  className="input"
-                />
-                <select
-                  name="job_type"
-                  value={form.job_type}
-                  onChange={handleChange}
-                  className="input"
-                >
-                  {JOB_TYPES.map(t => (
-                    <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-                  ))}
+                <input name="location" value={form.location} onChange={handleChange} placeholder="Location (e.g. Bangalore / Remote)" className="input" />
+                <select name="job_type" value={form.job_type} onChange={handleChange} className="input">
+                  {JOB_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                 </select>
               </div>
               <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                rows={4}
-                maxLength={2000}
+                name="description" value={form.description} onChange={handleChange}
+                rows={4} maxLength={2000}
                 placeholder="Describe the role, requirements, how to apply, referral process..."
                 className="input resize-none"
               />
@@ -176,9 +184,7 @@ export default function Home() {
 
         {/* Feed */}
         {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="animate-spin text-brand-700" size={32} />
-          </div>
+          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brand-700" size={32} /></div>
         ) : posts.length === 0 ? (
           <div className="card text-center py-16 text-gray-400">
             <Briefcase className="mx-auto mb-3" size={40} />
@@ -187,72 +193,148 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-4">
-            {posts.map(post => (
-              <div key={post.id} className="card">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-gray-900 text-base">{post.job_title}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${TYPE_COLORS[post.job_type] || TYPE_COLORS['full-time']}`}>
-                        {post.job_type}
-                      </span>
-                    </div>
-                    <p className="text-brand-700 font-semibold text-sm mt-0.5">{post.company}</p>
-                    <div className="flex items-center gap-3 mt-1 text-gray-400 text-xs flex-wrap">
-                      {post.location && (
-                        <span className="flex items-center gap-1"><MapPin size={11} />{post.location}</span>
-                      )}
-                      <span className="flex items-center gap-1"><Clock size={11} />{timeAgo(post.created_at)}</span>
-                    </div>
-                  </div>
-                  {post.posted_by.id === user?.id && (
-                    <button
-                      onClick={() => handleDelete(post.id)}
-                      className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
-                      title="Delete post"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
+            {posts.map(post => {
+              const isOwnPost  = post.posted_by.id === user?.id
+              const alreadySent = sentIds.has(Number(post.posted_by.id))
 
-                {/* Posted by */}
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100">
-                  <div className="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs flex-shrink-0">
-                    {post.posted_by.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">{post.posted_by.name}</p>
-                    {(post.posted_by.designation || post.posted_by.current_company) && (
-                      <p className="text-xs text-gray-400">
-                        {post.posted_by.designation}{post.posted_by.current_company ? ` @ ${post.posted_by.current_company}` : ''}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Description */}
-                {post.description && (
-                  <div>
-                    <p className={`text-sm text-gray-600 whitespace-pre-line ${!expanded[post.id] && post.description.length > 200 ? 'line-clamp-3' : ''}`}>
-                      {post.description}
-                    </p>
-                    {post.description.length > 200 && (
-                      <button
-                        onClick={() => toggleExpand(post.id)}
-                        className="text-xs text-brand-700 hover:underline mt-1 flex items-center gap-0.5"
-                      >
-                        {expanded[post.id] ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> Read more</>}
+              return (
+                <div key={post.id} className="card">
+                  {/* Header row */}
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-gray-900 text-base">{post.job_title}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${TYPE_COLORS[post.job_type] || TYPE_COLORS['full-time']}`}>
+                          {post.job_type}
+                        </span>
+                      </div>
+                      <p className="text-brand-700 font-semibold text-sm mt-0.5">{post.company}</p>
+                      <div className="flex items-center gap-3 mt-1 text-gray-400 text-xs flex-wrap">
+                        {post.location && <span className="flex items-center gap-1"><MapPin size={11} />{post.location}</span>}
+                        <span className="flex items-center gap-1"><Clock size={11} />{timeAgo(post.created_at)}</span>
+                      </div>
+                    </div>
+                    {isOwnPost && (
+                      <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0" title="Delete post">
+                        <Trash2 size={16} />
                       </button>
                     )}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Posted by */}
+                  <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs flex-shrink-0">
+                        {post.posted_by.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{post.posted_by.name}</p>
+                        {(post.posted_by.designation || post.posted_by.current_company) && (
+                          <p className="text-xs text-gray-400">
+                            {post.posted_by.designation}{post.posted_by.current_company ? ` @ ${post.posted_by.current_company}` : ''}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Ask Referral button */}
+                    {!isOwnPost && (
+                      alreadySent ? (
+                        <span className="flex-shrink-0 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
+                          ✓ Request Sent
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => openModal({ ...post.posted_by, job_title: post.job_title, company: post.company })}
+                          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-800 hover:bg-brand-700 rounded-lg transition-colors"
+                        >
+                          <SendHorizontal size={13} />
+                          Ask Referral
+                        </button>
+                      )
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  {post.description && (
+                    <div>
+                      <p className={`text-sm text-gray-600 whitespace-pre-line ${!expanded[post.id] && post.description.length > 200 ? 'line-clamp-3' : ''}`}>
+                        {post.description}
+                      </p>
+                      {post.description.length > 200 && (
+                        <button onClick={() => toggleExpand(post.id)} className="text-xs text-brand-700 hover:underline mt-1 flex items-center gap-0.5">
+                          {expanded[post.id] ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> Read more</>}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
+
+      {/* Referral Modal */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Ask for Referral</h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  For <span className="font-semibold text-gray-700">{modal.job_title}</span>
+                  {modal.company ? ` @ ${modal.company}` : ''}
+                </p>
+                <p className="text-sm text-gray-400 mt-0.5">via <span className="font-medium">{modal.name}</span></p>
+              </div>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            </div>
+
+            {/* Your profile */}
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+              <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">Your Profile (shared with referee)</p>
+              <p className="font-semibold text-gray-900">{user?.name}</p>
+              <p className="text-gray-500 text-sm">{user?.college_email}</p>
+              {user?.personal_email && <p className="text-gray-500 text-sm">{user.personal_email}</p>}
+              {user?.designation && (
+                <p className="text-gray-600 text-sm mt-1">
+                  {user.designation}{user.current_company ? ` @ ${user.current_company}` : ''}
+                </p>
+              )}
+              {user?.total_experience && <p className="text-gray-400 text-xs mt-0.5">Experience: {user.total_experience}</p>}
+              {user?.skills?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {user.skills.slice(0, 5).map(s => (
+                    <span key={s.name ?? s} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{s.name ?? s}</span>
+                  ))}
+                  {user.skills.length > 5 && <span className="text-xs text-blue-400">+{user.skills.length - 5} more</span>}
+                </div>
+              )}
+            </div>
+
+            <div className="mb-5">
+              <label className="label">Personal Message <span className="text-gray-400 font-normal">(optional)</span></label>
+              <textarea
+                value={message} onChange={e => setMessage(e.target.value)}
+                rows={3} maxLength={1000}
+                placeholder="Hi! I'm interested in the position you posted..."
+                className="input resize-none"
+              />
+              <p className="text-xs text-gray-400 text-right mt-1">{message.length}/1000</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={closeModal} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={sendReferral} disabled={sending} className="btn-primary flex-1">
+                <SendHorizontal size={16} />
+                {sending ? 'Sending...' : 'Send Request & Open Mail'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
