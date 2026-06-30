@@ -135,6 +135,8 @@ export default function Dashboard() {
                       <th className="text-left px-5 py-3.5 font-semibold text-gray-600">Designation</th>
                       <th className="text-left px-5 py-3.5 font-semibold text-gray-600">Current Company</th>
                       <th className="text-left px-5 py-3.5 font-semibold text-gray-600">Experience</th>
+                      <th className="text-left px-5 py-3.5 font-semibold text-gray-600">Personal Email</th>
+                      <th className="text-left px-5 py-3.5 font-semibold text-gray-600">Mobile</th>
                       <th className="text-left px-5 py-3.5 font-semibold text-gray-600">Skills</th>
                       <th className="text-center px-5 py-3.5 font-semibold text-gray-600">Action</th>
                     </tr>
@@ -149,6 +151,15 @@ export default function Dashboard() {
                         <td className="px-5 py-4 text-gray-700">{u.designation || '—'}</td>
                         <td className="px-5 py-4 text-gray-700">{u.current_company || '—'}</td>
                         <td className="px-5 py-4 text-gray-700">{u.total_experience || '—'}</td>
+                        <td className="px-5 py-4 text-gray-700 text-xs">{u.personal_email || '—'}</td>
+                        <td className="px-5 py-4 text-gray-700 text-xs">
+                          {u.mobile
+                            ? u.show_mobile
+                              ? u.mobile
+                              : <span className="text-gray-400 tracking-widest">{u.mobile}</span>
+                            : '—'
+                          }
+                        </td>
                         <td className="px-5 py-4">
                           <div className="flex flex-wrap gap-1">
                             {u.skills.length > 0
@@ -192,6 +203,8 @@ export default function Dashboard() {
                       <p className="text-gray-500 text-xs">{u.college_email}</p>
                       {u.designation && <p className="text-gray-600 text-sm mt-1">{u.designation} {u.current_company ? `@ ${u.current_company}` : ''}</p>}
                       {u.total_experience && <p className="text-gray-500 text-xs mt-0.5">Exp: {u.total_experience}</p>}
+                      {u.personal_email && <p className="text-gray-500 text-xs mt-0.5">{u.personal_email}</p>}
+                      {u.mobile && <p className="text-gray-500 text-xs mt-0.5">📱 {u.mobile}</p>}
                     </div>
                     {sentIds.has(u.id) ? (
                       <span className="flex-shrink-0 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-lg">Sent</span>

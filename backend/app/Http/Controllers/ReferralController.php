@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\ReferralRequestMail;
+// use App\Mail\ReferralRequestMail;
 use App\Models\ReferralRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
+// use Illuminate\Support\Facades\Mail;
 
 class ReferralController extends Controller
 {
@@ -44,9 +44,10 @@ class ReferralController extends Controller
             'status'       => 'sent',
         ]);
 
-        Mail::to($referee->college_email)->send(
-            new ReferralRequestMail($requester->load('skills'), $referee, $request->message)
-        );
+        // Email notification disabled temporarily — uncomment when domain is verified on Resend
+        // Mail::to($referee->college_email)->send(
+        //     new ReferralRequestMail($requester->load('skills'), $referee, $request->message)
+        // );
 
         return response()->json([
             'message' => "Referral request sent to {$referee->name} successfully!",

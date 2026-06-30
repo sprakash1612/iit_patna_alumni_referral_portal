@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\OtpMail;
-use App\Models\OtpVerification;
+// use App\Mail\OtpMail;
+// use App\Models\OtpVerification;
 use App\Models\Skill;
 use App\Models\User;
-use Carbon\Carbon;
+// use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
+// use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
 {
@@ -20,6 +20,7 @@ class AuthController extends Controller
             'college_email'    => 'required|email|unique:users,college_email',
             'personal_email'   => 'nullable|email',
             'mobile'           => 'nullable|string|max:15',
+            'show_mobile'      => 'nullable|boolean',
             'current_company'  => 'nullable|string|max:255',
             'previous_company' => 'nullable|string|max:255',
             'designation'      => 'nullable|string|max:255',
@@ -41,12 +42,13 @@ class AuthController extends Controller
             'college_email'    => strtolower($request->college_email),
             'personal_email'   => $request->personal_email,
             'mobile'           => $request->mobile,
+            'show_mobile'      => $request->input('show_mobile', true),
             'current_company'  => $request->current_company,
             'previous_company' => $request->previous_company,
             'designation'      => $request->designation,
             'total_experience' => $request->total_experience,
             'password'         => $request->password,
-            'is_verified'      => false,
+            'is_verified'      => true, // auto-verify; OTP email disabled temporarily
         ]);
 
         if ($request->skills) {
@@ -56,65 +58,28 @@ class AuthController extends Controller
             }
         }
 
-        $this->sendOtp($request->college_email, $user->name);
+        // OTP email disabled temporarily — uncomment when domain is verified on Resend
+        // $this->sendOtp($request->college_email, $user->name);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Registration successful. Check your @iitp.ac.in email for the OTP.',
-            'email'   => $user->college_email,
+            'message' => 'Registration successful. You can now log in.',
+            'token'   => $token,
+            'user'    => $user->load('skills'),
         ], 201);
     }
 
     public function verifyOtp(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'otp'   => 'required|string|size:6',
-        ]);
-
-        $record = OtpVerification::where('email', strtolower($request->email))
-            ->where('otp_code', $request->otp)
-            ->where('used', false)
-            ->where('expires_at', '>', Carbon::now())
-            ->first();
-
-        if (!$record) {
-            return response()->json(['message' => 'Invalid or expired OTP. Please try again.'], 422);
-        }
-
-        $user = User::where('college_email', strtolower($request->email))->first();
-        if (!$user) {
-            return response()->json(['message' => 'User not found.'], 404);
-        }
-
-        $user->update(['is_verified' => true]);
-        $record->update(['used' => true]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Email verified successfully. Welcome!',
-            'token'   => $token,
-            'user'    => $user->load('skills'),
-        ]);
+        // OTP verification disabled temporarily
+        return response()->json(['message' => 'OTP verification is not required at this time.']);
     }
 
     public function resendOtp(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
-
-        $user = User::where('college_email', strtolower($request->email))->first();
-
-        if (!$user) {
-            return response()->json(['message' => 'No account found with this email.'], 404);
-        }
-
-        if ($user->is_verified) {
-            return response()->json(['message' => 'This account is already verified.'], 422);
-        }
-
-        $this->sendOtp($request->email, $user->name);
-
-        return response()->json(['message' => 'OTP resent successfully.']);
+        // OTP resend disabled temporarily
+        return response()->json(['message' => 'OTP resend is not required at this time.']);
     }
 
     public function login(Request $request)
@@ -128,14 +93,6 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid email or password.'], 401);
-        }
-
-        if (!$user->is_verified) {
-            return response()->json([
-                'message'           => 'Please verify your email before logging in.',
-                'needs_verification' => true,
-                'email'             => $user->college_email,
-            ], 403);
         }
 
         $user->tokens()->delete();
@@ -159,19 +116,18 @@ class AuthController extends Controller
         return response()->json($request->user()->load('skills'));
     }
 
-    private function sendOtp(string $email, string $name): void
-    {
-        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        OtpVerification::updateOrCreate(
-            ['email' => strtolower($email)],
-            [
-                'otp_code'   => $otp,
-                'expires_at' => Carbon::now()->addMinutes(10),
-                'used'       => false,
-            ]
-        );
-
-        Mail::to($email)->send(new OtpMail($otp, $name));
-    }
+    // OTP email disabled temporarily — uncomment when domain is verified on Resend
+    // private function sendOtp(string $email, string $name): void
+    // {
+    //     $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    //     OtpVerification::updateOrCreate(
+    //         ['email' => strtolower($email)],
+    //         [
+    //             'otp_code'   => $otp,
+    //             'expires_at' => Carbon::now()->addMinutes(10),
+    //             'used'       => false,
+    //         ]
+    //     );
+    //     Mail::to($email)->send(new OtpMail($otp, $name));
+    // }
 }

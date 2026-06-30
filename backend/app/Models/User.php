@@ -15,6 +15,7 @@ class User extends Authenticatable
         'college_email',
         'personal_email',
         'mobile',
+        'show_mobile',
         'current_company',
         'previous_company',
         'designation',
@@ -29,8 +30,9 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'is_verified' => 'boolean',
-        'password' => 'hashed',
+        'is_verified'  => 'boolean',
+        'show_mobile'  => 'boolean',
+        'password'     => 'hashed',
     ];
 
     public function skills()

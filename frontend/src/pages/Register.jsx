@@ -10,9 +10,11 @@ const INITIAL = {
   total_experience: '', password: '', password_confirmation: '',
 }
 
+
 export default function Register() {
   const navigate = useNavigate()
   const [form, setForm] = useState(INITIAL)
+  const [showMobile, setShowMobile] = useState(true)
   const [skills, setSkills] = useState([])
   const [skillInput, setSkillInput] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -49,9 +51,9 @@ export default function Register() {
     }
     setLoading(true)
     try {
-      const { data } = await api.post('/auth/register', { ...form, skills })
-      toast.success('Registered! Check your IITP email for the OTP.')
-      navigate('/verify-otp', { state: { email: data.email } })
+      const { data } = await api.post('/auth/register', { ...form, skills, show_mobile: showMobile })
+      toast.success('Registration successful! You can now log in.')
+      navigate('/login')
     } catch (err) {
       const res = err.response
       if (res?.status === 422) {
@@ -169,6 +171,17 @@ export default function Register() {
                 {field('personal_email', 'Personal Email', { type: 'email', optional: true, placeholder: 'yourname@gmail.com' })}
                 {field('mobile', 'Mobile Number', { optional: true, placeholder: '+91 9876543210' })}
               </div>
+              <label className="flex items-center gap-2.5 mt-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showMobile}
+                  onChange={e => setShowMobile(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-brand-700 focus:ring-brand-600"
+                />
+                <span className="text-sm text-gray-600">
+                  Show my mobile number to other members
+                </span>
+              </label>
             </div>
 
             {/* Professional Details */}
