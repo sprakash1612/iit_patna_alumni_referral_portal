@@ -32,6 +32,11 @@ export function AuthProvider({ children }) {
     setUser(userData)
   }
 
+  const updateUser = (userData) => {
+    localStorage.setItem('user', JSON.stringify(userData))
+    setUser(userData)
+  }
+
   const logout = async () => {
     try {
       await api.post('/auth/logout')
@@ -42,7 +47,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, updateUser, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )

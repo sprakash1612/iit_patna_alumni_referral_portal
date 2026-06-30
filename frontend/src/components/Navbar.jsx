@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { LogOut, User, Bell, X, Briefcase, Mail, Phone } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import api from '../api/axios'
@@ -66,10 +67,13 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2 text-blue-100 text-sm mr-1">
+            <Link
+              to="/profile"
+              className="hidden sm:flex items-center gap-2 text-blue-100 hover:text-white text-sm mr-1 transition-colors"
+            >
               <User size={16} />
               <span className="font-medium">{user?.name}</span>
-            </div>
+            </Link>
 
             {/* Notification Bell */}
             <div className="relative" ref={dropdownRef}>
