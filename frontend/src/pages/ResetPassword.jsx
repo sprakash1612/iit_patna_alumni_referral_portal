@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
+import Footer from '../components/Footer'
 
 export default function ResetPassword() {
   const navigate              = useNavigate()
@@ -37,20 +38,24 @@ export default function ResetPassword() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-900 to-brand-700 px-4">
-        <div className="card w-full max-w-md text-center py-10">
-          <p className="text-gray-500">Verifying reset link...</p>
-          <p className="text-gray-400 text-sm mt-2">
-            If this takes too long, your link may have expired.{' '}
-            <a href="/forgot-password" className="text-brand-700 hover:underline">Request a new one</a>
-          </p>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-brand-900 to-brand-700">
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="card w-full max-w-md text-center py-10">
+            <p className="text-gray-500">Verifying reset link...</p>
+            <p className="text-gray-400 text-sm mt-2">
+              If this takes too long, your link may have expired.{' '}
+              <a href="/forgot-password" className="text-brand-700 hover:underline">Request a new one</a>
+            </p>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-900 to-brand-700 px-4">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-brand-900 to-brand-700">
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
@@ -88,6 +93,8 @@ export default function ResetPassword() {
           </form>
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
   )
 }

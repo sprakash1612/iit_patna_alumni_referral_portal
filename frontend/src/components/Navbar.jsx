@@ -94,6 +94,9 @@ export default function Navbar() {
             <Link to="/profile" className="hidden sm:flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors">
               <User size={16}/><span className="font-medium">{user?.name}</span>
             </Link>
+            <Link to="/profile" className="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg text-blue-100 hover:text-white hover:bg-brand-700 transition-colors" title="My Profile">
+              <User size={18}/>
+            </Link>
 
             <div className="relative" ref={dropdownRef}>
               <button onClick={handleBellClick}

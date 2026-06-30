@@ -8,7 +8,7 @@ export default function Footer() {
         <span className="text-gray-200">·</span>
         <a href="mailto:shanu_24a03res171@iitp.ac.in" className="hover:text-brand-700 transition-colors">shanu_24a03res171@iitp.ac.in</a>
         <span className="text-gray-200">·</span>
-        <a href="mailto:shanuprakash1612@gmail.com" className="hover:text-brand-700 transition-colors">shanuprakash1612@gmail.com</a>
+        <a href="mailto:spprakashshanu@gmail.com" className="hover:text-brand-700 transition-colors">spprakashshanu@gmail.com</a>
       </div>
     </footer>
   )

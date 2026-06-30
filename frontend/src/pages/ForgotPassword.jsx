@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Eye, EyeOff, KeyRound, Mail } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { Link, useNavigate } from 'react-router-dom'
+import { KeyRound, Mail } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import Footer from '../components/Footer'
 
 const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -48,7 +48,8 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-900 to-brand-700 px-4">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-brand-900 to-brand-700">
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
@@ -73,10 +74,9 @@ export default function ForgotPassword() {
                 <span className="font-semibold text-gray-700"> personal</span> email addresses.
               </p>
               <p className="text-gray-400 text-xs mt-3">The link expires in 1 hour.</p>
-              <button onClick={() => { setSent(false); setError('') }}
-                className="mt-6 text-sm text-brand-700 hover:underline">
-                Try again
-              </button>
+                      <Link to="/login" className="mt-6 inline-block btn-primary text-sm">
+                Go to Sign In
+              </Link>
             </div>
           ) : (
             <>
@@ -110,6 +110,8 @@ export default function ForgotPassword() {
           )}
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
   )
 }

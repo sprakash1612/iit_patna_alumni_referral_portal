@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, X, UserPlus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
+import Footer from '../components/Footer'
 
 const INITIAL = {
   name: '', college_email: '', personal_email: '', mobile: '',
@@ -94,7 +95,7 @@ export default function Register() {
     )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-900 to-brand-700 px-4 py-10">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-brand-900 to-brand-700 px-4 py-10">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
@@ -208,6 +209,7 @@ export default function Register() {
           </p>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }
