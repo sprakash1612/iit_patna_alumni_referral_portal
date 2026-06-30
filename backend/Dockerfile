@@ -16,6 +16,13 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interactio
 
 COPY . .
 
+RUN mkdir -p bootstrap/cache \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    && chmod -R 775 bootstrap/cache storage
+
 RUN php artisan package:discover --ansi \
     && php artisan config:cache \
     && php artisan route:cache \
