@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Plus, X, Loader2, Briefcase, MapPin, Clock, Trash2, ChevronDown, ChevronUp, SendHorizontal } from 'lucide-react'
+import { Plus, X, Loader2, Briefcase, MapPin, Clock, Trash2, ChevronDown, ChevronUp, SendHorizontal, Lock } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import GuestReferralModal from '../components/GuestReferralModal'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -33,32 +35,44 @@ export default function Home() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm]       = useState(EMPTY)
   const [submitting, setSubmitting] = useState(false)
-  const [errors, setErrors]   = useState({})
   const [expanded, setExpanded] = useState({})
   const [sentPostIds, setSentPostIds] = useState(new Set())
   const [modal, setModal]     = useState(null)
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
+  const [guestModal, setGuestModal] = useState(null)
 
   useEffect(() => {
-    if (!user) return
-    Promise.all([
-      supabase.from('job_posts')
-        .select(`id, job_title, company, location, job_type, description, created_at,
-                 posted_by:profiles!user_id(id, name, college_email, designation, current_company)`)
-        .order('created_at', { ascending: false }),
-      supabase.from('referral_requests')
-        .select('job_post_id')
-        .eq('requester_id', user.id)
-        .not('job_post_id', 'is', null),
-    ]).then(([{ data: postsData }, { data: sentData }]) => {
-      setPosts(postsData || [])
-      setSentPostIds(new Set((sentData || []).map(r => r.job_post_id)))
-    }).catch(() => toast.error('Failed to load posts.'))
-      .finally(() => setLoading(false))
+    if (user) {
+      // Authenticated: use job_posts with full poster info
+      Promise.all([
+        supabase.from('job_posts')
+          .select(`id, job_title, company, location, job_type, description, created_at,
+                   posted_by:profiles!user_id(id, name, college_email, designation, current_company)`)
+          .order('created_at', { ascending: false }),
+        supabase.from('referral_requests')
+          .select('job_post_id').eq('requester_id', user.id).not('job_post_id', 'is', null),
+      ]).then(([{ data: p }, { data: sent }]) => {
+        setPosts(p || [])
+        setSentPostIds(new Set((sent || []).map(r => r.job_post_id)))
+      }).catch(() => toast.error('Failed to load posts.')).finally(() => setLoading(false))
+    } else {
+      // Guest: use public_job_posts view (no poster email/mobile)
+      supabase.from('public_job_posts')
+        .select('*').order('created_at', { ascending: false })
+        .then(({ data }) => {
+          // Shape to match authenticated format
+          setPosts((data || []).map(p => ({
+            id: p.id, job_title: p.job_title, company: p.company,
+            location: p.location, job_type: p.job_type, description: p.description,
+            created_at: p.created_at,
+            posted_by: { id: p.user_id, name: p.poster_name, designation: p.poster_designation, current_company: p.poster_company },
+          })))
+        }).catch(() => toast.error('Failed to load posts.')).finally(() => setLoading(false))
+    }
   }, [user])
 
-  const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setErrors({ ...errors, [e.target.name]: '' }) }
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setSubmitting(true)
@@ -110,8 +124,22 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
+
+      {/* Guest banner */}
+      {!user && (
+        <div className="bg-brand-800 text-white text-center py-2 px-4 text-sm">
+          <Lock size={13} className="inline mr-1.5 mb-0.5" />
+          Sign in to post jobs and see poster contact details.{' '}
+          <Link to="/login" className="underline font-semibold">Sign In</Link>
+          {' '}or{' '}
+          <Link to="/register" className="underline font-semibold">Register</Link>
+        </div>
+      )}
+
       <div className="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
-        {!showForm ? (
+
+        {/* Create post — authenticated only */}
+        {user && (!showForm ? (
           <button onClick={() => setShowForm(true)}
             className="w-full flex items-center gap-3 p-4 text-left hover:border-brand-300 border-2 border-dashed border-gray-200 bg-white rounded-xl transition-colors mb-6">
             <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
@@ -123,19 +151,13 @@ export default function Home() {
           <div className="card mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Post a Job Opening</h3>
-              <button onClick={() => { setShowForm(false); setForm(EMPTY); setErrors({}) }} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+              <button onClick={() => { setShowForm(false); setForm(EMPTY) }} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <input name="job_title" value={form.job_title} onChange={handleChange} placeholder="Job Title *" className="input" required />
-                  {errors.job_title && <p className="error-text">{errors.job_title[0]}</p>}
-                </div>
-                <div>
-                  <input name="company" value={form.company} onChange={handleChange} placeholder="Company *" className="input" required />
-                  {errors.company && <p className="error-text">{errors.company[0]}</p>}
-                </div>
-                <input name="location" value={form.location} onChange={handleChange} placeholder="Location (e.g. Bangalore / Remote)" className="input" />
+                <input name="job_title" value={form.job_title} onChange={handleChange} placeholder="Job Title *" className="input" required />
+                <input name="company" value={form.company} onChange={handleChange} placeholder="Company *" className="input" required />
+                <input name="location" value={form.location} onChange={handleChange} placeholder="Location" className="input" />
                 <select name="job_type" value={form.job_type} onChange={handleChange} className="input">
                   {JOB_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>)}
                 </select>
@@ -148,7 +170,7 @@ export default function Home() {
               </div>
             </form>
           </div>
-        )}
+        ))}
 
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brand-700" size={32} /></div>
@@ -156,13 +178,13 @@ export default function Home() {
           <div className="card text-center py-16 text-gray-400">
             <Briefcase className="mx-auto mb-3" size={40} />
             <p className="font-medium">No job posts yet</p>
-            <p className="text-sm mt-1">Be the first to share an opening!</p>
+            {user && <p className="text-sm mt-1">Be the first to share an opening!</p>}
           </div>
         ) : (
           <div className="space-y-4">
             {posts.map(post => {
-              const isOwn = post.posted_by?.id === user?.id
-              const sent  = sentPostIds.has(post.id)
+              const isOwn   = user && post.posted_by?.id === user?.id
+              const sent    = sentPostIds.has(post.id)
               return (
                 <div key={post.id} className="card">
                   <div className="flex items-start justify-between gap-2 mb-3">
@@ -179,6 +201,8 @@ export default function Home() {
                     </div>
                     {isOwn && <button onClick={() => handleDelete(post.id)} className="text-gray-300 hover:text-red-400 flex-shrink-0"><Trash2 size={16}/></button>}
                   </div>
+
+                  {/* Posted by — no PII for guests */}
                   <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-gray-100">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs flex-shrink-0">
@@ -191,17 +215,27 @@ export default function Home() {
                         )}
                       </div>
                     </div>
+
+                    {/* Ask Referral button */}
                     {!isOwn && (
-                      sent ? (
-                        <span className="flex-shrink-0 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">✓ Request Sent</span>
+                      user ? (
+                        sent ? (
+                          <span className="flex-shrink-0 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">✓ Request Sent</span>
+                        ) : (
+                          <button onClick={() => openModal({ ...post.posted_by, post_id: post.id, job_title: post.job_title, company: post.company })}
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-800 hover:bg-brand-700 rounded-lg transition-colors">
+                            <SendHorizontal size={13}/>Ask Referral
+                          </button>
+                        )
                       ) : (
-                        <button onClick={() => openModal({ ...post.posted_by, post_id: post.id, job_title: post.job_title, company: post.company })}
+                        <button onClick={() => setGuestModal({ id: post.posted_by?.id, name: post.posted_by?.name, current_company: post.posted_by?.current_company, designation: post.posted_by?.designation, post_id: post.id, job_title: post.job_title, company: post.company })}
                           className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-800 hover:bg-brand-700 rounded-lg transition-colors">
                           <SendHorizontal size={13}/>Ask Referral
                         </button>
                       )
                     )}
                   </div>
+
                   {post.description && (
                     <div>
                       <p className={`text-sm text-gray-600 whitespace-pre-line ${!expanded[post.id] && post.description.length > 200 ? 'line-clamp-3' : ''}`}>{post.description}</p>
@@ -219,6 +253,7 @@ export default function Home() {
         )}
       </div>
 
+      {/* Auth referral modal */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={closeModal}/>
@@ -226,7 +261,7 @@ export default function Home() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Ask for Referral</h3>
-                <p className="text-sm text-gray-500 mt-0.5">For <span className="font-semibold text-gray-700">{modal.job_title}</span> @ {modal.company}</p>
+                <p className="text-sm text-gray-500 mt-0.5">For <span className="font-semibold">{modal.job_title}</span> @ {modal.company}</p>
                 <p className="text-sm text-gray-400 mt-0.5">via <span className="font-medium">{modal.name}</span></p>
               </div>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
@@ -260,6 +295,10 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Guest referral modal */}
+      {guestModal && <GuestReferralModal target={guestModal} onClose={() => setGuestModal(null)} />}
+
       <Footer />
     </div>
   )

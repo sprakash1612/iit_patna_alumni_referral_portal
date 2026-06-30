@@ -87,70 +87,83 @@ export default function Navbar() {
           <div className="flex items-center gap-1">
             <NavLink to="/home" className={navLinkClass}><Briefcase size={15}/><span className="hidden sm:inline">Jobs</span></NavLink>
             <NavLink to="/dashboard" className={navLinkClass}><GraduationCap size={15}/><span className="hidden sm:inline">Network</span></NavLink>
-            <NavLink to="/referrals" className={navLinkClass}><SendHorizontal size={15}/><span className="hidden sm:inline">Requests</span></NavLink>
+            {user && <NavLink to="/referrals" className={navLinkClass}><SendHorizontal size={15}/><span className="hidden sm:inline">Requests</span></NavLink>}
             {user?.is_admin && (
               <NavLink to="/admin" className={navLinkClass}><ShieldCheck size={15}/><span className="hidden sm:inline">Admin</span></NavLink>
             )}
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Link to="/profile" className="hidden sm:flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors">
-              <User size={16}/><span className="font-medium">{user?.name}</span>
-            </Link>
-            <Link to="/profile" className="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg text-blue-100 hover:text-white hover:bg-brand-700 transition-colors" title="My Profile">
-              <User size={18}/>
-            </Link>
+            {user ? (
+              <>
+                {/* Profile link */}
+                <Link to="/profile" className="hidden sm:flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors">
+                  <User size={16}/><span className="font-medium">{user.name}</span>
+                </Link>
+                <Link to="/profile" className="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg text-blue-100 hover:text-white hover:bg-brand-700 transition-colors" title="My Profile">
+                  <User size={18}/>
+                </Link>
 
-            <div className="relative" ref={dropdownRef}>
-              <button onClick={handleBellClick}
-                className="relative flex items-center justify-center w-9 h-9 rounded-lg text-blue-100 hover:text-white hover:bg-brand-700 transition-colors">
-                <Bell size={18}/>
-                {unseenCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center">
-                    {unseenCount > 9 ? '9+' : unseenCount}
-                  </span>
-                )}
-              </button>
-              {open && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                    <h4 className="font-semibold text-gray-800 text-sm">Referral Requests Received</h4>
-                    <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={16}/></button>
-                  </div>
-                  {notifications.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-gray-400 text-sm">No referral requests yet</div>
-                  ) : (
-                    <ul className="max-h-96 overflow-y-auto divide-y divide-gray-50">
-                      {notifications.map(n => (
-                        <li key={n.id} className={`px-4 py-3 ${!n.is_seen ? 'bg-blue-50' : ''}`}>
-                          <div className="flex items-start gap-2">
-                            {!n.is_seen && <span className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"/>}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 text-sm">{n.requester?.name}</p>
-                              {n.requester?.designation && (
-                                <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5">
-                                  <Briefcase size={11}/>{n.requester.designation}{n.requester.current_company ? ` @ ${n.requester.current_company}` : ''}
-                                </p>
-                              )}
-                              {n.requester?.college_email && <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5"><Mail size={11}/>{n.requester.college_email}</p>}
-                              {n.requester?.mobile && n.requester?.show_mobile && <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5"><Phone size={11}/>{n.requester.mobile}</p>}
-                              {n.job_post_id && <p className="text-xs text-purple-500 mt-0.5">Via job post</p>}
-                              {n.message && <p className="text-gray-600 text-xs mt-1.5 italic border-l-2 border-gray-200 pl-2">"{n.message}"</p>}
-                              <p className="text-gray-300 text-[10px] mt-1">{new Date(n.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</p>
-                            </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                {/* Notification bell */}
+                <div className="relative" ref={dropdownRef}>
+                  <button onClick={handleBellClick}
+                    className="relative flex items-center justify-center w-9 h-9 rounded-lg text-blue-100 hover:text-white hover:bg-brand-700 transition-colors">
+                    <Bell size={18}/>
+                    {unseenCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center">
+                        {unseenCount > 9 ? '9+' : unseenCount}
+                      </span>
+                    )}
+                  </button>
+                  {open && (
+                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                        <h4 className="font-semibold text-gray-800 text-sm">Referral Requests Received</h4>
+                        <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={16}/></button>
+                      </div>
+                      {notifications.length === 0 ? (
+                        <div className="px-4 py-8 text-center text-gray-400 text-sm">No referral requests yet</div>
+                      ) : (
+                        <ul className="max-h-96 overflow-y-auto divide-y divide-gray-50">
+                          {notifications.map(n => (
+                            <li key={n.id} className={`px-4 py-3 ${!n.is_seen ? 'bg-blue-50' : ''}`}>
+                              <div className="flex items-start gap-2">
+                                {!n.is_seen && <span className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"/>}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-gray-900 text-sm">{n.requester?.name}</p>
+                                  {n.requester?.designation && (
+                                    <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5">
+                                      <Briefcase size={11}/>{n.requester.designation}{n.requester.current_company ? ` @ ${n.requester.current_company}` : ''}
+                                    </p>
+                                  )}
+                                  {n.requester?.college_email && <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5"><Mail size={11}/>{n.requester.college_email}</p>}
+                                  {n.requester?.mobile && n.requester?.show_mobile && <p className="text-gray-400 text-xs flex items-center gap-1 mt-0.5"><Phone size={11}/>{n.requester.mobile}</p>}
+                                  {n.job_post_id && <p className="text-xs text-purple-500 mt-0.5">Via job post</p>}
+                                  {n.message && <p className="text-gray-600 text-xs mt-1.5 italic border-l-2 border-gray-200 pl-2">"{n.message}"</p>}
+                                  <p className="text-gray-300 text-[10px] mt-1">{new Date(n.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</p>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            <button onClick={logout}
-              className="flex items-center gap-2 px-3 py-1.5 text-blue-100 hover:text-white hover:bg-brand-700 rounded-lg transition-colors text-sm">
-              <LogOut size={16}/><span className="hidden sm:inline">Logout</span>
-            </button>
+                {/* Logout */}
+                <button onClick={logout}
+                  className="flex items-center gap-2 px-3 py-1.5 text-blue-100 hover:text-white hover:bg-brand-700 rounded-lg transition-colors text-sm">
+                  <LogOut size={16}/><span className="hidden sm:inline">Logout</span>
+                </button>
+              </>
+            ) : (
+              /* Guest navigation */
+              <>
+                <Link to="/login" className="hidden sm:flex px-3 py-1.5 text-sm font-medium text-blue-100 hover:text-white hover:bg-brand-700 rounded-lg transition-colors">Sign In</Link>
+                <Link to="/register" className="px-3 py-1.5 text-sm font-semibold text-brand-800 bg-white hover:bg-blue-50 rounded-lg transition-colors">Register</Link>
+              </>
+            )}
           </div>
         </div>
       </div>

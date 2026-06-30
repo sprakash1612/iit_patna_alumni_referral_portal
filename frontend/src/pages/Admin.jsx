@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Users, Briefcase, SendHorizontal, Trash2, Loader2, ShieldCheck, ShieldOff, BarChart3 } from 'lucide-react'
+import { Users, Briefcase, SendHorizontal, Trash2, Loader2, ShieldCheck, ShieldOff, UserCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -24,12 +24,13 @@ function fmt(d) {
 }
 
 export default function Admin() {
-  const [tab, setTab]           = useState('users')
-  const [users, setUsers]       = useState([])
-  const [posts, setPosts]       = useState([])
+  const [tab, setTab]             = useState('users')
+  const [users, setUsers]         = useState([])
+  const [posts, setPosts]         = useState([])
   const [referrals, setReferrals] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [stats, setStats]       = useState({})
+  const [guestReqs, setGuestReqs] = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [stats, setStats]         = useState({})
 
   useEffect(() => {
     fetchAll()
@@ -41,6 +42,7 @@ export default function Admin() {
       { data: usersData },
       { data: postsData },
       { data: referralsData },
+      { data: guestData },
     ] = await Promise.all([
       supabase.from('profiles')
         .select('id, name, college_email, personal_email, designation, current_company, is_verified, is_admin, created_at')
@@ -53,14 +55,20 @@ export default function Admin() {
                  requester:profiles!requester_id(name, college_email),
                  referee:profiles!referee_id(name, college_email)`)
         .order('created_at', { ascending: false }),
+      supabase.from('guest_referral_requests')
+        .select(`id, guest_name, guest_email, guest_mobile, message, job_post_id, created_at,
+                 referee:profiles!referee_id(name, college_email, current_company)`)
+        .order('created_at', { ascending: false }),
     ])
     setUsers(usersData || [])
     setPosts(postsData || [])
     setReferrals(referralsData || [])
+    setGuestReqs(guestData || [])
     setStats({
-      users:    (usersData || []).length,
-      posts:    (postsData || []).length,
-      referrals:(referralsData || []).length,
+      users:     (usersData || []).length,
+      posts:     (postsData || []).length,
+      referrals: (referralsData || []).length,
+      guests:    (guestData || []).length,
     })
     setLoading(false)
   }
@@ -99,9 +107,10 @@ export default function Admin() {
   }
 
   const tabs = [
-    { key: 'users',    label: 'Users',    icon: Users,          count: stats.users },
-    { key: 'posts',    label: 'Job Posts', icon: Briefcase,     count: stats.posts },
-    { key: 'referrals',label: 'Referrals', icon: SendHorizontal, count: stats.referrals },
+    { key: 'users',    label: 'Users',          icon: Users,          count: stats.users },
+    { key: 'posts',    label: 'Job Posts',       icon: Briefcase,      count: stats.posts },
+    { key: 'referrals',label: 'Referrals',       icon: SendHorizontal, count: stats.referrals },
+    { key: 'guests',   label: 'Guest Requests',  icon: UserCircle,     count: stats.guests },
   ]
 
   return (
@@ -286,6 +295,56 @@ export default function Admin() {
                 </table>
               </div>
             </div>
+          ) : (
+          /* ── GUEST REQUESTS ── */
+            guestReqs.length === 0 ? (
+              <div className="card text-center py-16 text-gray-400">
+                <UserCircle className="mx-auto mb-3" size={40} />
+                <p className="font-medium">No guest requests yet</p>
+              </div>
+            ) : (
+              <div className="card overflow-hidden p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Guest</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Contact</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Requested From</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Message</th>
+                        <th className="text-center px-4 py-3 font-semibold text-gray-600">Type</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {guestReqs.map(r => (
+                        <tr key={r.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-900">{r.guest_name}</p>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-600 space-y-0.5">
+                            <p>{r.guest_email}</p>
+                            {r.guest_mobile && <p className="text-gray-400">{r.guest_mobile}</p>}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-900">{r.referee?.name}</p>
+                            <p className="text-gray-400 text-xs">{r.referee?.college_email}</p>
+                            {r.referee?.current_company && <p className="text-gray-400 text-xs">{r.referee.current_company}</p>}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-xs max-w-[200px] truncate">{r.message || '—'}</td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.job_post_id ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
+                              {r.job_post_id ? 'Job Post' : 'Direct'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{fmt(r.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )
           )
         )}
       </div>

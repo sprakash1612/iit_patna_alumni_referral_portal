@@ -26,6 +26,8 @@ function ProtectedRoute({ children }) {
 function GuestRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return null
+  // Allow visiting login/register even if logged in via direct URL,
+  // but redirect from / to /home
   return user ? <Navigate to="/home" replace /> : children
 }
 
@@ -44,8 +46,8 @@ export default function App() {
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
       <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
       <Route path="/verify-otp" element={<GuestRoute><VerifyOtp /></GuestRoute>} />
-      <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/home" element={<Home />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
       <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />

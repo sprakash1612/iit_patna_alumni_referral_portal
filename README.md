@@ -90,7 +90,8 @@ GitHub Actions (every 6 days)
 | **Email Notifications** | Both parties emailed on referral request (college + personal email) |
 | **Real-time Bell** | Supabase Realtime subscription shows new requests instantly |
 | **Notification Panel** | Navbar bell shows all received requests with requester details |
-| **Admin Panel** | Manage users, job posts, referrals. Role-based access (`is_admin` flag). |
+| **Admin Panel** | Manage users, job posts, referrals, guest requests. Role-based access (`is_admin` flag). |
+| **Guest Access** | Browse Jobs + Network without login. PII fully hidden. Ask Referral via guest form (name, email, mobile, message). Popup asks if IITP alumni — yes → register, no → guest form. |
 | **Mobile Responsive** | Full mobile support including profile access |
 
 ---
@@ -113,9 +114,18 @@ job_posts             ← Job openings posted by alumni
   id, user_id, job_title, company, location, job_type,
   description, created_at
 
-referral_requests     ← Referral request between two users
+referral_requests     ← Referral request between two IITP users
   id, requester_id, referee_id, job_post_id (nullable),
   message, status, is_seen, created_at, updated_at
+
+guest_referral_requests ← Referral request from non-IITP external candidates
+  id, referee_id, job_post_id (nullable),
+  guest_name, guest_email, guest_mobile, message, created_at
+
+-- Views (no PII — accessible to unauthenticated guests)
+public_profiles       ← name, designation, company, experience only
+public_job_posts      ← job details + poster name/company only
+get_public_members()  ← RPC returning profiles + skills array (no PII)
 ```
 
 **Row Level Security (RLS)** enforces:

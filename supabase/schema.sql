@@ -188,3 +188,76 @@ CREATE POLICY "referral_requests: users insert as requester"
 CREATE POLICY "referral_requests: referee can update is_seen"
   ON public.referral_requests FOR UPDATE TO authenticated
   USING (referee_id = auth.uid());
+
+-- ============================================================
+-- GUEST ACCESS — Public views (no PII), guest referral requests
+-- Run this section in Supabase SQL Editor to enable guest access
+-- ============================================================
+
+-- Public profiles view (NO email, NO mobile)
+CREATE OR REPLACE VIEW public.public_profiles AS
+SELECT id, name, designation, current_company, previous_company, total_experience
+FROM public.profiles
+WHERE is_verified = TRUE;
+
+GRANT SELECT ON public.public_profiles TO anon, authenticated;
+
+-- Public job posts view (poster name/company only — NO email)
+CREATE OR REPLACE VIEW public.public_job_posts AS
+SELECT
+  jp.id, jp.job_title, jp.company, jp.location, jp.job_type, jp.description, jp.created_at, jp.user_id,
+  p.name  AS poster_name,
+  p.designation AS poster_designation,
+  p.current_company AS poster_company
+FROM public.job_posts jp
+LEFT JOIN public.profiles p ON p.id = jp.user_id;
+
+GRANT SELECT ON public.public_job_posts TO anon, authenticated;
+
+-- RPC: get all public members with skills (for guest network browsing)
+CREATE OR REPLACE FUNCTION public.get_public_members()
+RETURNS TABLE(
+  id UUID, name TEXT, designation TEXT,
+  current_company TEXT, previous_company JSONB,
+  total_experience TEXT, skills TEXT[]
+)
+LANGUAGE sql SECURITY DEFINER STABLE
+AS $$
+  SELECT
+    p.id, p.name, p.designation, p.current_company,
+    p.previous_company, p.total_experience,
+    COALESCE(array_agg(s.name) FILTER (WHERE s.name IS NOT NULL), ARRAY[]::TEXT[]) AS skills
+  FROM public.profiles p
+  LEFT JOIN public.user_skills us ON us.user_id = p.id
+  LEFT JOIN public.skills s ON s.id = us.skill_id
+  WHERE p.is_verified = TRUE
+  GROUP BY p.id, p.name, p.designation, p.current_company, p.previous_company, p.total_experience
+  ORDER BY p.name;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_public_members() TO anon, authenticated;
+
+-- Guest referral requests table (for non-IITP users)
+CREATE TABLE IF NOT EXISTS public.guest_referral_requests (
+  id          SERIAL      PRIMARY KEY,
+  referee_id  UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  job_post_id INTEGER     REFERENCES public.job_posts(id) ON DELETE SET NULL,
+  guest_name  TEXT        NOT NULL,
+  guest_email TEXT        NOT NULL,
+  guest_mobile TEXT,
+  message     TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.guest_referral_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "guest_referral_requests: anyone can insert"
+  ON public.guest_referral_requests FOR INSERT TO anon, authenticated WITH CHECK (true);
+
+CREATE POLICY "guest_referral_requests: referee or admin can read"
+  ON public.guest_referral_requests FOR SELECT TO authenticated
+  USING (referee_id = auth.uid() OR (SELECT is_admin FROM public.profiles WHERE id = auth.uid()));
+
+-- Allow anon to call job_posts (for guest job feed fallback)
+CREATE POLICY "job_posts: anon can read all"
+  ON public.job_posts FOR SELECT TO anon USING (true);
