@@ -5,23 +5,27 @@ import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import Footer from '../components/Footer'
 
+const COURSES = ['BTech', 'MTech', 'MBA', 'MCA', 'BSc', 'Other']
+
 const INITIAL = {
   name: '', college_email: '', personal_email: '', mobile: '',
   current_company: '', designation: '', total_experience: '',
-  password: '', password_confirmation: '',
+  linkedin_url: '', password: '', password_confirmation: '',
 }
 
 export default function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm]           = useState(INITIAL)
+  const [form, setForm]             = useState(INITIAL)
   const [showMobile, setShowMobile] = useState(true)
-  const [prevCompanies, setPrevCompanies]     = useState([])
+  const [course, setCourse]         = useState('')
+  const [courseOther, setCourseOther] = useState('')
+  const [prevCompanies, setPrevCompanies]       = useState([])
   const [prevCompanyInput, setPrevCompanyInput] = useState('')
-  const [skills, setSkills]       = useState([])
+  const [skills, setSkills]         = useState([])
   const [skillInput, setSkillInput] = useState('')
-  const [showPass, setShowPass]   = useState(false)
-  const [loading, setLoading]     = useState(false)
+  const [showPass, setShowPass]     = useState(false)
+  const [loading, setLoading]       = useState(false)
   const [errors, setErrors]       = useState({})
 
   const handleChange = (e) => {
@@ -46,6 +50,18 @@ export default function Register() {
       setErrors({ ...errors, personal_email: ['Personal email is required.'] })
       return
     }
+    if (!form.linkedin_url) {
+      setErrors({ ...errors, linkedin_url: ['LinkedIn profile URL is required.'] })
+      return
+    }
+    if (!course) {
+      setErrors({ ...errors, course: ['Please select your course.'] })
+      return
+    }
+    if (course === 'Other' && !courseOther.trim()) {
+      setErrors({ ...errors, courseOther: ['Please specify your course.'] })
+      return
+    }
     if (form.password !== form.password_confirmation) {
       setErrors({ ...errors, password_confirmation: ['Passwords do not match.'] })
       return
@@ -56,6 +72,7 @@ export default function Register() {
         ...form,
         show_mobile:      showMobile,
         previous_company: prevCompanies,
+        course:           course === 'Other' ? courseOther.trim() : course,
         skills,
       })
       toast.success('Registration successful!')
@@ -157,6 +174,30 @@ export default function Register() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {field('personal_email', 'Personal Email', { type: 'email', placeholder: 'yourname@gmail.com' })}
                 {field('mobile', 'Mobile Number', { optional: true, placeholder: '+91 9876543210' })}
+              </div>
+              {/* LinkedIn */}
+              <div className="mt-4">
+                <label className="label">LinkedIn Profile URL <span className="text-red-500">*</span></label>
+                <input type="url" name="linkedin_url" value={form.linkedin_url} onChange={handleChange}
+                  placeholder="https://linkedin.com/in/yourname" className="input" required />
+                {errors.linkedin_url && <p className="error-text">{errors.linkedin_url[0]}</p>}
+              </div>
+              {/* Course */}
+              <div className="mt-4">
+                <label className="label">Course <span className="text-red-500">*</span></label>
+                <select value={course} onChange={e => { setCourse(e.target.value); setErrors({ ...errors, course: '' }) }}
+                  className="input">
+                  <option value="">Select your course...</option>
+                  {COURSES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                {errors.course && <p className="error-text">{errors.course[0]}</p>}
+                {course === 'Other' && (
+                  <div className="mt-2">
+                    <input type="text" value={courseOther} onChange={e => { setCourseOther(e.target.value); setErrors({ ...errors, courseOther: '' }) }}
+                      placeholder="Enter your course name" className="input" />
+                    {errors.courseOther && <p className="error-text">{errors.courseOther[0]}</p>}
+                  </div>
+                )}
               </div>
               <label className="flex items-center gap-2.5 mt-3 cursor-pointer select-none">
                 <input type="checkbox" checked={showMobile} onChange={e => setShowMobile(e.target.checked)}

@@ -52,6 +52,8 @@ export function AuthProvider({ children }) {
       previous_company: previous_company || [],
       designation:      designation || null,
       total_experience: total_experience || null,
+      course:           course || null,
+      linkedin_url:     linkedin_url || null,
       is_verified:      true,
     })
     if (profileError) throw profileError
@@ -91,6 +93,8 @@ export function AuthProvider({ children }) {
       previous_company: previous_company || [],
       designation:      designation || null,
       total_experience: total_experience || null,
+      course:           course || null,
+      linkedin_url:     linkedin_url || null,
     }).eq('id', user.id)
     if (error) throw error
 

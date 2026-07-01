@@ -32,7 +32,7 @@ export default function Dashboard() {
       Promise.all([
         supabase.from('profiles')
           .select(`id, name, college_email, personal_email, mobile, show_mobile,
-                   current_company, previous_company, designation, total_experience,
+                   current_company, previous_company, designation, total_experience, course,
                    user_skills(skills(name))`)
           .eq('is_verified', true).neq('id', user.id).order('name'),
         supabase.from('referral_requests')
@@ -154,6 +154,7 @@ export default function Dashboard() {
                       <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-5 py-4">
                           <p className="font-semibold text-gray-900">{u.name}</p>
+                          {u.course && <span className="text-xs px-1.5 py-0.5 bg-brand-50 text-brand-700 rounded font-medium">{u.course}</span>}
                           {user ? (
                             <>
                               <p className="text-gray-400 text-xs truncate max-w-[160px]">{u.college_email}</p>
