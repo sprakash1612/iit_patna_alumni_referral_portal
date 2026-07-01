@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, SendHorizontal, X, Loader2, Users, Building2, Lock } from 'lucide-react'
+import { Search, SendHorizontal, X, Loader2, Users, Building2, Lock, Linkedin } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import Navbar from '../components/Navbar'
@@ -32,7 +32,7 @@ export default function Dashboard() {
       Promise.all([
         supabase.from('profiles')
           .select(`id, name, college_email, personal_email, mobile, show_mobile,
-                   current_company, previous_company, designation, total_experience,
+                   current_company, previous_company, designation, total_experience, course, linkedin_url,
                    user_skills(skills(name))`)
           .eq('is_verified', true).neq('id', user.id).order('name'),
         supabase.from('referral_requests')
@@ -154,6 +154,15 @@ export default function Dashboard() {
                       <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-5 py-4">
                           <p className="font-semibold text-gray-900">{u.name}</p>
+                          <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                            {u.course && <span className="text-xs px-1.5 py-0.5 bg-brand-50 text-brand-700 rounded font-medium">{u.course}</span>}
+                            {user && u.linkedin_url && (
+                              <a href={u.linkedin_url} target="_blank" rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 transition-colors" title="View LinkedIn">
+                                <Linkedin size={14} />
+                              </a>
+                            )}
+                          </div>
                           {user ? (
                             <>
                               <p className="text-gray-400 text-xs truncate max-w-[160px]">{u.college_email}</p>
@@ -209,7 +218,16 @@ export default function Dashboard() {
                 <div key={u.id} className="card">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900">{u.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900">{u.name}</p>
+                        {user && u.linkedin_url && (
+                          <a href={u.linkedin_url} target="_blank" rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800" title="View LinkedIn">
+                            <Linkedin size={13} />
+                          </a>
+                        )}
+                      </div>
+                      {u.course && <span className="text-xs px-1.5 py-0.5 bg-brand-50 text-brand-700 rounded font-medium">{u.course}</span>}
                       {user ? (
                         <p className="text-gray-400 text-xs truncate">{u.college_email}</p>
                       ) : (

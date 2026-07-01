@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   previous_company JSONB       NOT NULL DEFAULT '[]',
   designation      TEXT,
   total_experience TEXT,
+  course           TEXT,
+  linkedin_url     TEXT,
   is_verified      BOOLEAN     NOT NULL DEFAULT TRUE,
   is_admin         BOOLEAN     NOT NULL DEFAULT FALSE,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -261,3 +263,41 @@ CREATE POLICY "guest_referral_requests: referee or admin can read"
 -- Allow anon to call job_posts (for guest job feed fallback)
 CREATE POLICY "job_posts: anon can read all"
   ON public.job_posts FOR SELECT TO anon USING (true);
+
+-- ============================================================
+-- MIGRATION: Add course and linkedin_url to existing profiles
+-- Run this in Supabase SQL Editor on existing databases
+-- ============================================================
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS course TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
+
+-- ============================================================
+-- UPDATE public views to include course (not linkedin_url)
+-- Run after adding linkedin_url and course columns
+-- ============================================================
+CREATE OR REPLACE VIEW public.public_profiles AS
+SELECT id, name, designation, current_company, previous_company, total_experience, course
+FROM public.profiles
+WHERE is_verified = TRUE;
+
+CREATE OR REPLACE FUNCTION public.get_public_members()
+RETURNS TABLE(
+  id UUID, name TEXT, designation TEXT,
+  current_company TEXT, previous_company JSONB,
+  total_experience TEXT, course TEXT, skills TEXT[]
+)
+LANGUAGE sql SECURITY DEFINER STABLE
+AS $$
+  SELECT
+    p.id, p.name, p.designation, p.current_company,
+    p.previous_company, p.total_experience, p.course,
+    COALESCE(array_agg(s.name) FILTER (WHERE s.name IS NOT NULL), ARRAY[]::TEXT[]) AS skills
+  FROM public.profiles p
+  LEFT JOIN public.user_skills us ON us.user_id = p.id
+  LEFT JOIN public.skills s ON s.id = us.skill_id
+  WHERE p.is_verified = TRUE
+  GROUP BY p.id, p.name, p.designation, p.current_company, p.previous_company, p.total_experience, p.course
+  ORDER BY p.name;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_public_members() TO anon, authenticated;

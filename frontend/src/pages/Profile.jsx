@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, X, Save, ArrowLeft, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -11,15 +11,22 @@ export default function Profile() {
   const { user, updateUser, updatePassword } = useAuth()
   const navigate = useNavigate()
 
+  const COURSES = ['BTech', 'MTech', 'MBA', 'MCA', 'BSc', 'Other']
+
+  // Determine if current course is a known value or custom
+  const knownCourse = COURSES.slice(0, -1).includes(user?.course) ? user?.course : (user?.course ? 'Other' : '')
   const [form, setForm] = useState({
     name:             user?.name || '',
     personal_email:   user?.personal_email || '',
     mobile:           user?.mobile || '',
+    linkedin_url:     user?.linkedin_url || '',
     current_company:  user?.current_company || '',
     designation:      user?.designation || '',
     total_experience: user?.total_experience || '',
   })
-  const [showMobile, setShowMobile]             = useState(user?.show_mobile ?? true)
+  const [course, setCourse]           = useState(knownCourse)
+  const [courseOther, setCourseOther] = useState(knownCourse === 'Other' ? (user?.course || '') : '')
+  const [showMobile, setShowMobile]   = useState(user?.show_mobile ?? true)
   const [prevCompanies, setPrevCompanies]         = useState(user?.previous_company || [])
   const [prevInput, setPrevInput]                 = useState('')
   const [skills, setSkills]                       = useState(user?.skills || [])
@@ -55,8 +62,9 @@ export default function Profile() {
 
       await updateUser({
         ...form,
-        show_mobile: showMobile,
+        show_mobile:      showMobile,
         previous_company: prevCompanies,
+        course:           course === 'Other' ? courseOther.trim() : course,
         skills,
       })
       toast.success('Profile updated successfully!')
@@ -120,6 +128,26 @@ export default function Profile() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {field('personal_email', 'Personal Email', { type: 'email', placeholder: 'yourname@gmail.com' })}
                 {field('mobile', 'Mobile Number', { placeholder: '+91 9876543210' })}
+              </div>
+              {/* LinkedIn */}
+              <div className="mt-4">
+                <label className="label">LinkedIn Profile URL</label>
+                <input type="url" name="linkedin_url" value={form.linkedin_url}
+                  onChange={e => setForm({ ...form, linkedin_url: e.target.value })}
+                  placeholder="https://linkedin.com/in/yourname" className="input" />
+                <p className="text-xs text-gray-400 mt-1">Your LinkedIn URL is private — not shown to other members.</p>
+              </div>
+              {/* Course */}
+              <div className="mt-4">
+                <label className="label">Course</label>
+                <select value={course} onChange={e => setCourse(e.target.value)} className="input">
+                  <option value="">Select your course...</option>
+                  {COURSES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                {course === 'Other' && (
+                  <input type="text" value={courseOther} onChange={e => setCourseOther(e.target.value)}
+                    placeholder="Enter your course name" className="input mt-2" />
+                )}
               </div>
               <label className="flex items-center gap-2.5 mt-3 cursor-pointer select-none">
                 <input type="checkbox" checked={showMobile} onChange={e => setShowMobile(e.target.checked)}
