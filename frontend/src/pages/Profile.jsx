@@ -45,7 +45,11 @@ export default function Profile() {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); setLoading(true); setErrors({})
+    e.preventDefault()
+    if (!form.linkedin_url.trim()) {
+      setErrors({ linkedin_url: ['LinkedIn profile URL is required.'] }); return
+    }
+    setLoading(true); setErrors({})
     try {
       // Password change
       if (showPasswordSection && passwords.current_password) {
@@ -131,11 +135,12 @@ export default function Profile() {
               </div>
               {/* LinkedIn */}
               <div className="mt-4">
-                <label className="label">LinkedIn Profile URL</label>
+                <label className="label">LinkedIn Profile URL <span className="text-red-500">*</span></label>
                 <input type="url" name="linkedin_url" value={form.linkedin_url}
                   onChange={e => setForm({ ...form, linkedin_url: e.target.value })}
-                  placeholder="https://linkedin.com/in/yourname" className="input" />
-                <p className="text-xs text-gray-400 mt-1">Your LinkedIn URL is private — not shown to other members.</p>
+                  placeholder="https://linkedin.com/in/yourname" className="input" required />
+                {errors.linkedin_url && <p className="error-text">{errors.linkedin_url[0]}</p>}
+                <p className="text-xs text-gray-400 mt-1">Only visible to logged-in IITP members.</p>
               </div>
               {/* Course */}
               <div className="mt-4">

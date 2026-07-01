@@ -82,7 +82,8 @@ export function AuthProvider({ children }) {
   }
 
   const updateUser = async ({ name, personal_email, mobile, show_mobile,
-    current_company, previous_company, designation, total_experience, skills }) => {
+    current_company, previous_company, designation, total_experience,
+    course, linkedin_url, skills }) => {
 
     const { error } = await supabase.from('profiles').update({
       name,
