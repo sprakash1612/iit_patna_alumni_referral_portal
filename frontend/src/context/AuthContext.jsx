@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const register = async ({ name, college_email, personal_email, mobile, show_mobile,
-    current_company, previous_company, designation, total_experience, password, skills }) => {
+    current_company, previous_company, designation, total_experience, course, linkedin_url, password, skills }) => {
 
     const { data, error } = await supabase.auth.signUp({
       email: college_email.toLowerCase(),
